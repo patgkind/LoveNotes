@@ -79,9 +79,17 @@ body {
 .color-picker {
   width: 24px;
   height: 24px;
-  cursor: pointer;
-  border: 1px solid #999;
   border-radius: 3px;
+  border: 1px solid #999;
+  cursor: pointer;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 0;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  display: none; /* visible only during adding/editing */
 }
 
 /* Floating Action Button */
@@ -205,15 +213,11 @@ function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null){
 
   if(imageUrl){ const img = document.createElement('img'); img.src=imageUrl; note.appendChild(img); }
 
-  // Color Picker
+  // Color picker square
   const colorInput = document.createElement('input');
   colorInput.type = 'color';
   colorInput.value = color;
   colorInput.className = 'color-picker';
-  colorInput.style.position = 'absolute';
-  colorInput.style.top='5px';
-  colorInput.style.right='5px';
-  colorInput.style.display = 'block';
   note.appendChild(colorInput);
 
   colorInput.addEventListener('input', e=>{
@@ -222,7 +226,6 @@ function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null){
   });
 
   board.appendChild(note);
-
   makeDraggable(note);
 
   return note;
@@ -250,6 +253,7 @@ addNoteBtn.addEventListener('click', ()=>{
   const note = createNote(60,60,'','#fffb7d');
   note.classList.add('adding');
   note.querySelector('textarea').focus();
+  note.querySelector('.color-picker').style.display='block';
 });
 
 editNotesBtn.addEventListener('click', ()=>{
