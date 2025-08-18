@@ -289,7 +289,7 @@
         el.style.top = note.y + "px";
       };
     }
-
+  /* 
 // Add a note
 fetch(`${scriptURL}?action=add&content=${encodeURIComponent(content)}&color=${color}&x=${x}&y=${y}`)
   .then(res => res.json())
@@ -310,7 +310,7 @@ fetch(`${scriptURL}?action=get`)
   .then(res => res.json())
   .then(data => console.log("Notes:", data));
 
-   /* 
+ */
    async function fetchNotes() {
       try {
         const res = await fetch(scriptURL + "?action=get");
@@ -339,7 +339,7 @@ fetch(`${scriptURL}?action=get`)
     }
 
     fetchNotes(); 
-    */
+    
   </script>
 </body>
 </html>
