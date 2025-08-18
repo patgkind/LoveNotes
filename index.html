@@ -165,6 +165,7 @@
       note.style.background = color;
       note.style.zIndex = zIndexCounter++;
 
+      // Actions
       const actions = document.createElement('div');
       actions.className = 'actions';
 
@@ -201,8 +202,19 @@
         }
       });
 
+      // Persistent color picker
+      const colorInput = document.createElement('input');
+      colorInput.type = 'color';
+      colorInput.value = color;
+      colorInput.style.width = '100%';
+      colorInput.title = 'Pick note color';
+      colorInput.addEventListener('input', e => {
+        note.style.background = e.target.value;
+      });
+
       note.appendChild(actions);
       note.appendChild(textarea);
+      note.appendChild(colorInput);
 
       if (imageUrl) {
         const img = document.createElement('img');
@@ -220,7 +232,7 @@
       let offsetX, offsetY;
 
       el.addEventListener('mousedown', e => {
-        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'IMG') return;
         isDragging = true;
         offsetX = e.offsetX;
         offsetY = e.offsetY;
@@ -240,37 +252,26 @@
       });
     }
 
+    // FAB Actions
     addNoteBtn.addEventListener('click', () => {
       const note = createNote(60, 60);
       note.classList.add('adding');
-      const textarea = note.querySelector('textarea');
-      textarea.focus();
-
-      // Color picker while adding
-      const colorInput = document.createElement('input');
-      colorInput.type = 'color';
-      colorInput.value = '#fffb7d';
-      colorInput.style.width = '100%';
-      colorInput.oninput = e => note.style.background = e.target.value;
-      note.appendChild(colorInput);
-      textarea.addEventListener('blur', () => colorInput.remove());
+      note.querySelector('textarea').focus();
     });
 
     editNotesBtn.addEventListener('click', () => {
-      document.querySelectorAll('.note').forEach(note => {
-        note.classList.add('editing');
-      });
+      document.querySelectorAll('.note').forEach(note => note.classList.toggle('editing'));
     });
 
     deleteNotesBtn.addEventListener('click', () => {
-      document.querySelectorAll('.note .delete').forEach(del => del.style.display = 'inline');
+      document.querySelectorAll('.note .delete').forEach(del => {
+        del.style.display = del.style.display === 'inline' ? 'none' : 'inline';
+      });
     });
 
     addImageBtn.addEventListener('click', () => {
       const url = prompt('Enter image URL:');
-      if (url) {
-        createNote(80, 80, '', '#ffffff', url);
-      }
+      if (url) createNote(80, 80, '', '#ffffff', url);
     });
   </script>
 </body>
