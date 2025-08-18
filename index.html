@@ -85,9 +85,6 @@ body {
   border-radius: 3px;
   z-index: 10000;
 }
-.color-picker input {
-  display: none;
-}
 
 /* Floating Action Button */
 #fab {
@@ -136,7 +133,6 @@ body {
   cursor: pointer;
   fill: #333;
 }
-
 </style>
 </head>
 <body>
@@ -153,27 +149,21 @@ body {
 </div>
 
 <script>
-const board = document.getElementById('board');
-const fabMain = document.getElementById('fabMain');
-const fabOptions = document.getElementById('fabOptions');
-const addNoteBtn = document.getElementById('addNote');
-const editNotesBtn = document.getElementById('editNotes');
-const deleteNotesBtn = document.getElementById('deleteNotes');
-const addImageBtn = document.getElementById('addImage');
+const board=document.getElementById('board');
+const fabMain=document.getElementById('fabMain');
+const fabOptions=document.getElementById('fabOptions');
+const addNoteBtn=document.getElementById('addNote');
+const editNotesBtn=document.getElementById('editNotes');
+const deleteNotesBtn=document.getElementById('deleteNotes');
+const addImageBtn=document.getElementById('addImage');
 
-fabMain.addEventListener('click', () => {
-  fabOptions.style.display = fabOptions.style.display==='flex'?'none':'flex';
-});
-document.addEventListener('click', e=>{
-  if(!fabMain.contains(e.target) && !fabOptions.contains(e.target)){
-    fabOptions.style.display='none';
-  }
-});
+fabMain.addEventListener('click',()=>{fabOptions.style.display=fabOptions.style.display==='flex'?'none':'flex';});
+document.addEventListener('click',e=>{if(!fabMain.contains(e.target)&&!fabOptions.contains(e.target)){fabOptions.style.display='none';}});
 
-let zIndexCounter = 1;
+let zIndexCounter=1;
 
 function getContrastColor(bgColor){
-  const color = bgColor.charAt(0)==='#'?bgColor.substring(1,7):bgColor;
+  const color=bgColor.charAt(0)==='#'?bgColor.substring(1,7):bgColor;
   const r=parseInt(color.substring(0,2),16);
   const g=parseInt(color.substring(2,4),16);
   const b=parseInt(color.substring(4,6),16);
@@ -182,7 +172,7 @@ function getContrastColor(bgColor){
 }
 
 function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null,showColor=true){
-  const note = document.createElement('div');
+  const note=document.createElement('div');
   note.className='note';
   note.style.left=x+'px';
   note.style.top=y+'px';
@@ -197,15 +187,7 @@ function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null,showColor=tr
   const pin=document.createElementNS("http://www.w3.org/2000/svg","svg");
   pin.classList.add('pin-icon');
   pin.innerHTML='<path d="M12 2C10.343 2 9 3.343 9 5c0 1.657 3 7 3 7s3-5.343 3-7c0-1.657-1.343-3-3-3zm0 9.5c-1.38 0-2.5 1.12-2.5 2.5S10.62 16.5 12 16.5 14.5 15.38 14.5 14 13.38 11.5 12 11.5z"/>';
-  pin.addEventListener('click', ()=>{
-    if(note.classList.contains('pinned')){
-      note.classList.remove('pinned');
-      note.style.zIndex='';
-    }else{
-      note.classList.add('pinned');
-      note.style.zIndex=9999;
-    }
-  });
+  pin.addEventListener('click',()=>{if(note.classList.contains('pinned')){note.classList.remove('pinned');note.style.zIndex='';}else{note.classList.add('pinned');note.style.zIndex=9999;}});
 
   const del=document.createElement('span');
   del.className='delete';
@@ -219,22 +201,14 @@ function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null,showColor=tr
   const textarea=document.createElement('textarea');
   textarea.value=text;
   textarea.style.color=getContrastColor(color);
-  textarea.addEventListener('blur', ()=>{
+  textarea.addEventListener('blur',()=>{
     note.classList.remove('adding','editing');
     if(colorPicker) colorPicker.style.display='none';
   });
-  textarea.addEventListener('keydown', e=>{
-    if(e.key==='Enter'){ e.preventDefault(); textarea.blur(); }
-  });
+  textarea.addEventListener('keydown', e=>{if(e.key==='Enter'){e.preventDefault(); textarea.blur();}});
   note.appendChild(textarea);
 
-  // Optional image
-  if(imageUrl){
-    const img=document.createElement('img');
-    img.src=imageUrl;
-    note.appendChild(img);
-  }
-
+  if(imageUrl){const img=document.createElement('img'); img.src=imageUrl; note.appendChild(img);}
   board.appendChild(note);
 
   // External color picker
@@ -243,13 +217,15 @@ function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null,showColor=tr
     colorPicker=document.createElement('div');
     colorPicker.className='color-picker';
     colorPicker.style.background=color;
+    board.appendChild(colorPicker);
+
     const input=document.createElement('input');
     input.type='color';
     input.value=color;
-    colorPicker.appendChild(input);
-    board.appendChild(colorPicker);
+    input.style.position='absolute';
+    input.style.left='-9999px';
+    document.body.appendChild(input);
 
-    // Position beside note
     function updateColorPickerPos(){
       const rect=note.getBoundingClientRect();
       const boardRect=board.getBoundingClientRect();
@@ -257,12 +233,10 @@ function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null,showColor=tr
       colorPicker.style.top=(rect.top-boardRect.top)+'px';
     }
     updateColorPickerPos();
-
-    // Move color picker when dragging
     note.updateColorPickerPos=updateColorPickerPos;
 
-    colorPicker.addEventListener('click', ()=>input.click());
-    input.addEventListener('input', e=>{
+    colorPicker.addEventListener('click',()=>input.click());
+    input.addEventListener('input',e=>{
       note.style.background=e.target.value;
       textarea.style.color=getContrastColor(e.target.value);
       colorPicker.style.background=e.target.value;
@@ -270,7 +244,6 @@ function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null,showColor=tr
   }
 
   makeDraggable(note);
-
   return note;
 }
 
@@ -289,33 +262,34 @@ function makeDraggable(el){
     el.style.top=(e.clientY-rect.top-offsetY)+'px';
     if(el.updateColorPickerPos) el.updateColorPickerPos();
   });
-  document.addEventListener('mouseup', ()=>{ isDragging=false; el.style.cursor='grab'; });
+  document.addEventListener('mouseup',()=>{ isDragging=false; el.style.cursor='grab'; });
 }
 
 // FAB actions
-addNoteBtn.addEventListener('click', ()=>{
+addNoteBtn.addEventListener('click',()=>{
   const note=createNote(60,60,'','#fffb7d',null,true);
   note.classList.add('adding');
   note.querySelector('textarea').focus();
 });
 
-editNotesBtn.addEventListener('click', ()=>{
+editNotesBtn.addEventListener('click',()=>{
   document.querySelectorAll('.note').forEach(note=>{
     note.classList.toggle('editing');
     if(note.updateColorPickerPos){
-      const cp=board.querySelector('.color-picker');
+      note.updateColorPickerPos();
+      const cp=document.querySelectorAll('.color-picker')[0];
       if(cp) cp.style.display=note.classList.contains('editing')?'block':'none';
     }
   });
 });
 
-deleteNotesBtn.addEventListener('click', ()=>{
+deleteNotesBtn.addEventListener('click',()=>{
   document.querySelectorAll('.note .delete').forEach(del=>{
     del.style.display=del.style.display==='inline'?'none':'inline';
   });
 });
 
-addImageBtn.addEventListener('click', ()=>{
+addImageBtn.addEventListener('click',()=>{
   const url=prompt('Enter image URL:');
   if(url) createNote(80,80,'','#ffffff',url,true);
 });
