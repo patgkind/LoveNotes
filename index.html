@@ -2,53 +2,60 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Love Notes</title>
   <style>
     body {
+      font-family: system-ui, sans-serif;
       margin: 0;
-      font-family: Arial, sans-serif;
+      padding: 0;
       background: #f0f0f0;
     }
     #board {
       position: relative;
-      width: calc(100vw - 20px);
-      height: calc(100vh - 20px);
       margin: 10px;
       border: 2px solid #ccc;
-      background: white;
-      overflow: hidden;
+      border-radius: 8px;
+      background: #fff;
+      height: calc(100vh - 20px);
+      overflow: auto;
     }
     .note {
       position: absolute;
-      width: 160px;
-      min-height: 120px;
-      padding: 10px;
-      box-sizing: border-box;
-      border-radius: 8px;
-      box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
-      cursor: move;
-      overflow-wrap: break-word;
+      padding: 8px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: grab;
+      min-width: 100px;
+      min-height: 60px;
+      overflow: hidden;
     }
     .note img {
-      max-width: 100%;
-      border-radius: 6px;
+      max-width: 120px;
+      max-height: 120px;
+      display: block;
     }
-    /* FAB */
-    .fab {
+    .note div[contenteditable] {
+      outline: none;
+      min-height: 20px;
+    }
+    .fab-container {
       position: fixed;
       bottom: 20px;
       right: 20px;
     }
-    .fab button {
+    .fab {
+      background: #ff4081;
       width: 56px;
       height: 56px;
       border-radius: 50%;
-      border: none;
-      background: #ff4081;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       color: white;
       font-size: 24px;
       cursor: pointer;
-      box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
     .fab-menu {
       display: none;
@@ -57,121 +64,162 @@
       align-items: flex-end;
     }
     .fab-menu button {
-      margin-top: 10px;
-      width: auto;
-      height: auto;
-      border-radius: 20px;
-      padding: 8px 12px;
-      font-size: 14px;
-      background: #ff4081;
+      margin: 4px 0;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      cursor: pointer;
     }
-    .fab.open .fab-menu {
+    .fab-container.open .fab-menu {
       display: flex;
+    }
+    .color-picker {
+      margin-top: 4px;
     }
   </style>
 </head>
 <body>
   <div id="board"></div>
 
-  <!-- FAB -->
-  <div class="fab" id="fab">
+  <div class="fab-container" id="fab">
     <div class="fab-menu">
       <button onclick="addNote()">Add Note</button>
       <button onclick="addImage()">Add Image</button>
       <button onclick="toggleEdit()">Edit Mode</button>
-      <button onclick="deleteSelected()">Delete</button>
+      <button onclick="toggleDelete()">Delete</button>
     </div>
-    <button onclick="toggleFab()">+</button>
+    <div class="fab" onclick="toggleFab()">+</div>
   </div>
 
   <script>
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbyOgP36dXRLEoXmmg3KHUfPNuprLSVTo1k57aQYC8VkYfP4vdROq4X3lhFMvOHyQ1dgKw/exec";
-    let editMode = false;
-    let selectedNote = null;
+  const scriptUrl = "https://script.google.com/macros/s/AKfycbyOgP36dXRLEoXmmg3KHUfPNuprLSVTo1k57aQYC8VkYfP4vdROq4X3lhFMvOHyQ1dgKw/exec";
+  let editMode = false;
+  let deleteMode = false;
 
-    async function fetchNotes() {
-      const res = await fetch(`${scriptUrl}?action=list`);
-      const notes = await res.json();
-      renderNotes(notes);
-    }
+  async function fetchNotes() {
+    const res = await fetch(`${scriptUrl}?action=list`);
+    const notes = await res.json();
+    renderNotes(notes);
+  }
 
-    function renderNotes(notes) {
-      const board = document.getElementById('board');
-      board.innerHTML = '';
-      notes.forEach(n => {
-        const div = document.createElement('div');
-        div.className = 'note';
-        div.style.left = n.X + 'px';
-        div.style.top = n.Y + 'px';
-        div.style.background = n.Color;
-        div.dataset.id = n.ID;
+  function renderNotes(notes) {
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+    notes.forEach(n => {
+      const div = document.createElement('div');
+      div.className = 'note';
+      div.style.left = n.X + 'px';
+      div.style.top = n.Y + 'px';
+      div.style.background = n.Color || '#fff';
+      div.dataset.id = n.ID;
 
-        if (n.ImageURL) {
-          const img = document.createElement('img');
-          img.src = n.ImageURL;
-          div.appendChild(img);
-        }
-        const text = document.createElement('div');
-        text.contentEditable = true;
-        text.innerText = n.Text;
-        text.onblur = () => saveEdit(n.ID, text.innerText);
-        div.appendChild(text);
+      if (n.ImageURL) {
+        const img = document.createElement('img');
+        img.src = n.ImageURL;
+        div.appendChild(img);
+      }
 
-        board.appendChild(div);
-      });
-    }
+      const text = document.createElement('div');
+      text.contentEditable = true;
+      text.innerText = n.Text;
+      text.onblur = () => saveEdit(n.ID, text.innerText);
+      div.appendChild(text);
 
-    async function saveEdit(id, text) {
-      await fetch(`${scriptUrl}?action=edit&id=${id}&text=${encodeURIComponent(text)}`);
-    }
+      if (editMode) {
+        const picker = document.createElement('input');
+        picker.type = "color";
+        picker.value = n.Color || "#ffffff";
+        picker.className = "color-picker";
+        picker.oninput = () => changeColor(n.ID, picker.value);
+        div.appendChild(picker);
+      }
 
-    async function addNote() {
-      const params = new URLSearchParams({
-        action: 'add',
-        text: '',
-        color: '#fffb7d',
-        x: 50,
-        y: 50,
-        pinned: 'false',
-        imageUrl: ''
-      });
-      await fetch(`${scriptUrl}?${params}`);
-      fetchNotes();
-    }
+      div.onclick = () => {
+        if (deleteMode) deleteNote(n.ID);
+      };
 
-    async function addImage() {
-      const url = prompt("Enter image URL");
-      if (!url) return;
-      const params = new URLSearchParams({
-        action: 'add',
-        text: '',
-        color: '#fff',
-        x: 50,
-        y: 50,
-        pinned: 'false',
-        imageUrl: url
-      });
-      await fetch(`${scriptUrl}?${params}`);
-      fetchNotes();
-    }
+      if (editMode) {
+        div.draggable = true;
+        div.ondragstart = e => e.dataTransfer.setData("id", n.ID);
+      }
 
-    function toggleEdit() {
-      editMode = !editMode;
-      alert("Edit mode " + (editMode ? "ON" : "OFF"));
-    }
+      board.appendChild(div);
+    });
+  }
 
-    async function deleteSelected() {
-      const id = prompt("Enter note ID to delete");
-      if (!id) return;
-      await fetch(`${scriptUrl}?action=delete&id=${id}`);
-      fetchNotes();
-    }
-
-    function toggleFab() {
-      document.getElementById('fab').classList.toggle('open');
-    }
-
+  document.getElementById('board').ondragover = e => e.preventDefault();
+  document.getElementById('board').ondrop = async e => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("id");
+    const x = e.offsetX;
+    const y = e.offsetY;
+    await fetch(`${scriptUrl}?action=move&id=${id}&x=${x}&y=${y}`);
     fetchNotes();
+  };
+
+  async function saveEdit(id, text) {
+    await fetch(`${scriptUrl}?action=edit&id=${id}&text=${encodeURIComponent(text)}`);
+  }
+
+  async function changeColor(id, color) {
+    await fetch(`${scriptUrl}?action=color&id=${id}&color=${encodeURIComponent(color)}`);
+    fetchNotes();
+  }
+
+  async function addNote() {
+    const params = new URLSearchParams({
+      action: 'add',
+      text: '',
+      color: '#fffb7d',
+      x: 50,
+      y: 50,
+      pinned: 'false',
+      imageUrl: ''
+    });
+    await fetch(`${scriptUrl}?${params}`);
+    fetchNotes();
+  }
+
+  async function addImage() {
+    const url = prompt("Enter image URL");
+    if (!url) return;
+    const params = new URLSearchParams({
+      action: 'add',
+      text: '',
+      color: '#fff',
+      x: 50,
+      y: 50,
+      pinned: 'false',
+      imageUrl: url
+    });
+    await fetch(`${scriptUrl}?${params}`);
+    fetchNotes();
+  }
+
+  function toggleEdit() {
+    editMode = !editMode;
+    deleteMode = false;
+    fetchNotes();
+  }
+
+  function toggleDelete() {
+    deleteMode = !deleteMode;
+    editMode = false;
+    fetchNotes();
+  }
+
+  async function deleteNote(id) {
+    await fetch(`${scriptUrl}?action=delete&id=${id}`);
+    fetchNotes();
+  }
+
+  function toggleFab() {
+    document.getElementById('fab').classList.toggle('open');
+  }
+
+  fetchNotes();
   </script>
 </body>
 </html>
