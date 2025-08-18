@@ -290,7 +290,28 @@
       };
     }
 
-    async function fetchNotes() {
+// Add a note
+fetch(`${SCRIPT_URL}?action=add&content=${encodeURIComponent(content)}&color=${color}&x=${x}&y=${y}`)
+  .then(res => res.json())
+  .then(data => console.log("Added:", data));
+
+// Edit a note
+fetch(`${SCRIPT_URL}?action=edit&id=${id}&content=${encodeURIComponent(content)}&color=${color}&x=${x}&y=${y}&pinned=${pinned}`)
+  .then(res => res.json())
+  .then(data => console.log("Edited:", data));
+
+// Delete a note
+fetch(`${SCRIPT_URL}?action=delete&id=${id}`)
+  .then(res => res.json())
+  .then(data => console.log("Deleted:", data));
+
+// Get notes
+fetch(`${SCRIPT_URL}?action=get`)
+  .then(res => res.json())
+  .then(data => console.log("Notes:", data));
+
+   /* 
+   async function fetchNotes() {
       try {
         const res = await fetch(scriptURL + "?action=get");
         const data = await res.json();
@@ -317,7 +338,8 @@
       await fetchNotes();
     }
 
-    fetchNotes();
+    fetchNotes(); 
+    */
   </script>
 </body>
 </html>
