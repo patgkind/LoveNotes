@@ -48,7 +48,6 @@ body {
   background: transparent;
   font-size: 14px;
   outline: none;
-  pointer-events: none;
 }
 
 .note.adding textarea,
@@ -217,8 +216,6 @@ function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null){
   const textarea = document.createElement('textarea');
   textarea.value = text;
   textarea.style.color = getContrastColor(color);
-  textarea.addEventListener('blur', ()=>{ note.classList.remove('adding','editing'); colorButton.style.display='none'; });
-  textarea.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); textarea.blur(); }});
   note.appendChild(textarea);
 
   if(imageUrl){ const img = document.createElement('img'); img.src=imageUrl; note.appendChild(img); }
@@ -232,15 +229,27 @@ function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null){
   const hiddenInput = document.createElement('input');
   hiddenInput.type='color';
   hiddenInput.value=color;
-  hiddenInput.style.display='none';
+  hiddenInput.style.position='absolute';
+  hiddenInput.style.left='0';
+  hiddenInput.style.top='0';
+  hiddenInput.style.opacity=0;
   note.appendChild(hiddenInput);
 
-  colorButton.addEventListener('click', ()=> hiddenInput.click());
+  colorButton.addEventListener('click', e=>{
+    hiddenInput.click();
+    e.stopPropagation(); // prevent blur
+  });
+
   hiddenInput.addEventListener('input', e=>{
     note.style.background = e.target.value;
     textarea.style.color = getContrastColor(e.target.value);
     colorButton.style.background = e.target.value;
   });
+
+  // Show color button only during adding/editing
+  note.classList.add('adding');
+  colorButton.style.display='block';
+  textarea.focus();
 
   board.appendChild(note);
   makeDraggable(note);
@@ -265,18 +274,27 @@ function makeDraggable(el){
   document.addEventListener('mouseup', ()=>{ isDragging=false; el.style.cursor='grab'; });
 }
 
+// Click outside to finalize adding/editing
+document.addEventListener('click', e=>{
+  document.querySelectorAll('.note.adding, .note.editing').forEach(note=>{
+    if(!note.contains(e.target)){
+      note.classList.remove('adding','editing');
+      const btn = note.querySelector('.color-button');
+      if(btn) btn.style.display='none';
+    }
+  });
+});
+
 // FAB actions
 addNoteBtn.addEventListener('click', ()=>{
-  const note = createNote(60,60,'','#fffb7d');
-  note.classList.add('adding');
-  note.querySelector('textarea').focus();
-  note.querySelector('.color-button').style.display='block';
+  createNote(60,60,'','#fffb7d');
 });
 
 editNotesBtn.addEventListener('click', ()=>{
   document.querySelectorAll('.note').forEach(note=>{
     note.classList.toggle('editing');
-    note.querySelector('.color-button').style.display = note.classList.contains('editing')?'block':'none';
+    const btn = note.querySelector('.color-button');
+    if(btn) btn.style.display = note.classList.contains('editing')?'block':'none';
   });
 });
 
