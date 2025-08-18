@@ -9,19 +9,12 @@
       background: #f2f2f2;
       margin: 0;
       padding: 0;
-    }
-    header {
-      background: #ffeb3b;
-      padding: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      overflow: hidden;
     }
     #board {
       position: relative;
       width: 100%;
-      height: calc(100vh - 50px);
-      overflow: hidden;
+      height: 100vh;
     }
     .note {
       position: absolute;
@@ -35,39 +28,37 @@
     }
     .note textarea {
       width: 100%;
-      height: 80px;
+      height: 100px;
       border: none;
       background: transparent;
       resize: none;
       font-family: inherit;
       font-size: 14px;
+      outline: none;
     }
-    .controls {
-      display: flex;
-      justify-content: flex-end;
-      gap: 6px;
-      margin-top: 5px;
-    }
-    .controls button {
-      background: #f44336;
-      border: none;
-      color: white;
-      padding: 4px 6px;
-      font-size: 12px;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-    .controls button.edit {
+    /* Floating add button */
+    #addBtn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
       background: #4caf50;
+      color: white;
+      font-size: 32px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h2>Sticky Notes</h2>
-    <button id="addBtn">+ Add Note</button>
-  </header>
   <div id="board"></div>
+  <button id="addBtn">+</button>
 
   <script>
     const board = document.getElementById("board");
@@ -83,55 +74,11 @@
       note.style.top = y + "px";
       note.dataset.id = noteId;
 
-      note.innerHTML = `
-        <textarea>${text}</textarea>
-        <div class="controls">
-          <button class="edit">Edit</button>
-          <button class="delete">X</button>
-        </div>
-      `;
-
+      note.innerHTML = `<textarea placeholder="Write something...">${text}</textarea>`;
       board.appendChild(note);
 
       makeDraggable(note);
-
-      // Delete button
-      note.querySelector(".delete").onclick = () => note.remove();
-
-      // Edit button (toggles readonly)
-      const textarea = note.querySelector("textarea");
-      note.querySelector(".edit").onclick = () => {
-        textarea.readOnly = !textarea.readOnly;
-        textarea.focus();
-      };
     }
 
     // Make note draggable
-    function makeDraggable(note) {
-      let offsetX, offsetY, isDragging = false;
-
-      note.addEventListener("mousedown", (e) => {
-        if (e.target.tagName === "TEXTAREA" || e.target.tagName === "BUTTON") return;
-        isDragging = true;
-        offsetX = e.clientX - note.offsetLeft;
-        offsetY = e.clientY - note.offsetTop;
-        note.style.zIndex = 1000;
-      });
-
-      document.addEventListener("mousemove", (e) => {
-        if (!isDragging) return;
-        note.style.left = (e.clientX - offsetX) + "px";
-        note.style.top = (e.clientY - offsetY) + "px";
-      });
-
-      document.addEventListener("mouseup", () => {
-        isDragging = false;
-        note.style.zIndex = "";
-      });
-    }
-
-    // Add button event
-    addBtn.onclick = () => createNote(60, 60, "New note...");
-  </script>
-</body>
-</html>
+    function makeD
