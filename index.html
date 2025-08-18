@@ -81,4 +81,31 @@
     }
 
     // Make note draggable
-    function makeD
+    function makeDraggable(note) {
+      let offsetX, offsetY, isDragging = false;
+
+      note.addEventListener("mousedown", (e) => {
+        if (e.target.tagName === "TEXTAREA") return; // don’t drag while typing
+        isDragging = true;
+        offsetX = e.clientX - note.offsetLeft;
+        offsetY = e.clientY - note.offsetTop;
+        note.style.zIndex = 1000;
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        note.style.left = (e.clientX - offsetX) + "px";
+        note.style.top = (e.clientY - offsetY) + "px";
+      });
+
+      document.addEventListener("mouseup", () => {
+        isDragging = false;
+        note.style.zIndex = "";
+      });
+    }
+
+    // Add button event
+    addBtn.onclick = () => createNote(60, 60, "");
+  </script>
+</body>
+</html>
