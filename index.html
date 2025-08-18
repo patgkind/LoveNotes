@@ -313,10 +313,9 @@ fetch(`${scriptURL}?action=get`)
  */
    async function fetchNotes() {
       try {
-// Add a note
-fetch(`${scriptURL}?action=add&content=${encodeURIComponent(content)}&color=${color}&x=${x}&y=${y}`)
-  .then(res => res.json())
-  .then(data => console.log("Added:", data));
+      fetch(`${scriptURL}?action=get`)
+        .then(res => res.json())
+        .then(data => console.log("Notes:", data));
         notes = data;
         renderAllNotes();
       } catch (err) {
@@ -325,18 +324,16 @@ fetch(`${scriptURL}?action=add&content=${encodeURIComponent(content)}&color=${co
     }
 
     async function saveNote(note) {
-      await fetch(scriptURL + "?action=save", {
-        method: "POST",
-        body: JSON.stringify(note)
-      });
+      await fetch(`${scriptURL}?action=add&content=${encodeURIComponent(content)}&color=${color}&x=${x}&y=${y}`)
+  .then(res => res.json())
+  .then(data => console.log("Added:", data));
       await fetchNotes();
     }
 
     async function deleteNote(id) {
-      await fetch(scriptURL + "?action=delete", {
-        method: "POST",
-        body: JSON.stringify({id})
-      });
+      await fetch(`${scriptURL}?action=delete&id=${id}`)
+  .then(res => res.json())
+  .then(data => console.log("Deleted:", data));
       await fetchNotes();
     }
 
