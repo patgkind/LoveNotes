@@ -3,39 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Notes</title>
+  <title>Notes Board</title>
   <style>
     body {
-      font-family: sans-serif;
       margin: 0;
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #f0f0f0;
+      background: #f2f2f2;
+      font-family: sans-serif;
     }
 
-    /* The Board */
-    #board {
+    .board {
       position: relative;
       width: 90%;
       height: 90%;
       background: #fff;
-      border: 20px solid #ddd;
+      border: 5px solid #ccc;
       border-radius: 20px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       overflow: hidden;
     }
 
-    /* Sticky Note */
     .note {
       position: absolute;
       width: 160px;
       min-height: 120px;
-      background: #fffa8b;
+      background: #fffb88;
       border-radius: 8px;
-      box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
       padding: 8px;
+      box-sizing: border-box;
       cursor: move;
     }
 
@@ -50,175 +49,137 @@
       font-family: inherit;
     }
 
-    .note.editing {
-      border: 2px solid #007bff;
-      box-shadow: 0 0 8px rgba(0,123,255,0.6);
-    }
-
-    /* Floating Action Button */
-    #fab {
+    .fab {
       position: absolute;
-      bottom: 24px;
-      right: 24px;
-      width: 60px;
-      height: 60px;
+      bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
-      background: #28a745;
-      color: white;
+      background: #4caf50;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 30px;
+      color: #fff;
+      font-size: 28px;
       cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      transition: background 0.3s;
-      z-index: 10;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
-    /* Mode Menu */
-    #menu {
+    .menu {
       position: absolute;
-      bottom: 100px;
-      right: 24px;
+      bottom: 80px;
+      right: 20px;
       display: none;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
 
-    .menu-btn {
-      background: white;
-      border: 1px solid #ccc;
+    .menu button {
       padding: 8px 12px;
-      border-radius: 8px;
+      border: none;
+      border-radius: 6px;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
       font-size: 14px;
+      color: #fff;
     }
 
-    .delete-btn {
-      position: absolute;
-      top: -10px;
-      right: -10px;
-      background: red;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 22px;
-      height: 22px;
-      cursor: pointer;
-      display: none;
-    }
+    .menu button.add { background: #4caf50; }
+    .menu button.edit { background: #2196f3; }
+    .menu button.delete { background: #f44336; }
   </style>
 </head>
 <body>
-  <div id="board"></div>
+  <div class="board" id="board"></div>
 
-  <!-- FAB and Menu -->
-  <div id="fab">+</div>
-  <div id="menu">
-    <div class="menu-btn" onclick="setMode('add')">Add</div>
-    <div class="menu-btn" onclick="setMode('edit')">Edit</div>
-    <div class="menu-btn" onclick="setMode('delete')">Delete</div>
+  <div class="fab" id="fab">+</div>
+  <div class="menu" id="menu">
+    <button class="add">Add</button>
+    <button class="edit">Edit</button>
+    <button class="delete">Delete</button>
   </div>
 
   <script>
-    const board = document.getElementById("board");
-    const fab = document.getElementById("fab");
-    const menu = document.getElementById("menu");
-    let mode = "normal";
+    const board = document.getElementById('board');
+    const fab = document.getElementById('fab');
+    const menu = document.getElementById('menu');
+    const addBtn = document.querySelector('.menu .add');
 
-    fab.addEventListener("click", () => {
-      menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
+    let zIndexCounter = 1;
+
+    fab.addEventListener('click', () => {
+      menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
     });
 
-    function setMode(newMode) {
-      mode = newMode;
-      menu.style.display = "none";
-      fab.style.background = (mode === "edit") ? "#007bff" :
-                             (mode === "delete") ? "#dc3545" : "#28a745";
-      updateDeleteButtons();
-    }
-
-    function updateDeleteButtons() {
-      document.querySelectorAll(".note .delete-btn").forEach(btn => {
-        btn.style.display = (mode === "delete") ? "block" : "none";
-      });
-    }
-
-    // Add note on board click
-    board.addEventListener("click", (e) => {
-      if (mode === "add") {
-        if (e.target.id === "board") {
-          createNote(e.offsetX, e.offsetY);
-        }
-      }
+    addBtn.addEventListener('click', () => {
+      createNote();
+      menu.style.display = 'none';
     });
 
-    function createNote(x, y) {
-      const note = document.createElement("div");
-      note.className = "note";
-      note.style.left = x + "px";
-      note.style.top = y + "px";
+    function createNote() {
+      let note = document.createElement('div');
+      note.className = 'note';
+      note.style.left = '80px';
+      note.style.top = '80px';
+      note.style.zIndex = zIndexCounter++;
+      note.innerHTML = '<textarea placeholder="Type..."></textarea>';
+      board.appendChild(note);
 
-      const textarea = document.createElement("textarea");
-      textarea.readOnly = true;
-      note.appendChild(textarea);
+      avoidOverlap(note);
 
-      const del = document.createElement("button");
-      del.innerHTML = "×";
-      del.className = "delete-btn";
-      del.onclick = () => board.removeChild(note);
-      note.appendChild(del);
-
-      note.addEventListener("click", (e) => {
-        if (mode === "edit" && e.target.tagName !== "BUTTON") {
-          textarea.readOnly = false;
-          textarea.focus();
-          note.classList.add("editing");
-
-          textarea.addEventListener("blur", () => {
-            textarea.readOnly = true;
-            note.classList.remove("editing");
-          }, { once: true });
-
-          textarea.addEventListener("keydown", (ev) => {
-            if (ev.key === "Enter") {
-              textarea.blur();
-            }
-          });
-        }
-      });
+      const textarea = note.querySelector('textarea');
+      textarea.focus();
 
       makeDraggable(note);
-      board.appendChild(note);
-      updateDeleteButtons();
     }
 
-    function makeDraggable(note) {
+    function avoidOverlap(newNote) {
+      const notes = Array.from(document.querySelectorAll('.note'));
+      let hasOverlap = true;
+      while (hasOverlap) {
+        hasOverlap = false;
+        for (let n of notes) {
+          if (n === newNote) continue;
+          if (isOverlapping(newNote, n)) {
+            let top = parseInt(newNote.style.top) || 0;
+            let left = parseInt(newNote.style.left) || 0;
+            newNote.style.top = (top + 30) + 'px';
+            newNote.style.left = (left + 30) + 'px';
+            hasOverlap = true;
+          }
+        }
+      }
+    }
+
+    function isOverlapping(a, b) {
+      const rect1 = a.getBoundingClientRect();
+      const rect2 = b.getBoundingClientRect();
+      return !(
+        rect1.right < rect2.left ||
+        rect1.left > rect2.right ||
+        rect1.bottom < rect2.top ||
+        rect1.top > rect2.bottom
+      );
+    }
+
+    function makeDraggable(el) {
       let offsetX, offsetY, dragging = false;
 
-      note.addEventListener("mousedown", (e) => {
-        if (mode !== "normal") return;
+      el.addEventListener('mousedown', (e) => {
         dragging = true;
-        offsetX = e.offsetX;
-        offsetY = e.offsetY;
+        offsetX = e.clientX - el.offsetLeft;
+        offsetY = e.clientY - el.offsetTop;
+        el.style.zIndex = zIndexCounter++;
       });
 
-      document.addEventListener("mousemove", (e) => {
-        if (!dragging) return;
-        let rect = board.getBoundingClientRect();
-        let x = e.clientX - rect.left - offsetX;
-        let y = e.clientY - rect.top - offsetY;
-
-        // Keep inside board
-        x = Math.max(0, Math.min(x, rect.width - note.offsetWidth));
-        y = Math.max(0, Math.min(y, rect.height - note.offsetHeight));
-
-        note.style.left = x + "px";
-        note.style.top = y + "px";
+      document.addEventListener('mousemove', (e) => {
+        if (dragging) {
+          el.style.left = (e.clientX - offsetX) + 'px';
+          el.style.top = (e.clientY - offsetY) + 'px';
+        }
       });
 
-      document.addEventListener("mouseup", () => dragging = false);
+      document.addEventListener('mouseup', () => dragging = false);
     }
   </script>
 </body>
