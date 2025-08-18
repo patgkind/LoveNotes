@@ -6,33 +6,27 @@
   <style>
     body {
       margin: 0;
-      font-family: system-ui, sans-serif;
-      background: #ececec;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
     }
     #board {
       position: relative;
-      width: 90%;
-      height: 90vh;
-      background: #fdfdfd;
+      width: calc(100vw - 20px);
+      height: calc(100vh - 20px);
+      margin: 10px;
       border: 2px solid #ccc;
-      border-radius: 12px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.2);
+      background: white;
       overflow: hidden;
     }
     .note {
       position: absolute;
-      width: 180px;
+      width: 160px;
       min-height: 120px;
-      padding: 8px;
-      border: 1px solid #bbb;
+      padding: 10px;
+      box-sizing: border-box;
       border-radius: 8px;
       box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
-      background: #fffb7d;
-      cursor: grab;
+      cursor: move;
       overflow-wrap: break-word;
     }
     .note img {
@@ -41,7 +35,7 @@
     }
     /* FAB */
     .fab {
-      position: absolute;
+      position: fixed;
       bottom: 20px;
       right: 20px;
     }
@@ -54,116 +48,130 @@
       color: white;
       font-size: 24px;
       cursor: pointer;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
     }
     .fab-menu {
       display: none;
-      position: absolute;
-      bottom: 70px;
-      right: 0;
       flex-direction: column;
-      gap: 10px;
+      margin-bottom: 10px;
+      align-items: flex-end;
     }
     .fab-menu button {
+      margin-top: 10px;
       width: auto;
       height: auto;
-      padding: 8px 14px;
-      border-radius: 8px;
+      border-radius: 20px;
+      padding: 8px 12px;
       font-size: 14px;
-      background: #fff;
-      color: #333;
-      border: 1px solid #ccc;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      background: #ff4081;
+    }
+    .fab.open .fab-menu {
+      display: flex;
     }
   </style>
 </head>
 <body>
   <div id="board"></div>
 
-  <div class="fab">
-    <button id="fab-main">+</button>
-    <div class="fab-menu" id="fab-menu">
+  <!-- FAB -->
+  <div class="fab" id="fab">
+    <div class="fab-menu">
       <button onclick="addNote()">Add Note</button>
       <button onclick="addImage()">Add Image</button>
-      <button onclick="toggleEditMode()">Edit Mode</button>
+      <button onclick="toggleEdit()">Edit Mode</button>
       <button onclick="deleteSelected()">Delete</button>
     </div>
+    <button onclick="toggleFab()">+</button>
   </div>
 
   <script>
     const scriptUrl = "https://script.google.com/macros/s/AKfycbyOgP36dXRLEoXmmg3KHUfPNuprLSVTo1k57aQYC8VkYfP4vdROq4X3lhFMvOHyQ1dgKw/exec";
-    const board = document.getElementById('board');
-    const fabMain = document.getElementById('fab-main');
-    const fabMenu = document.getElementById('fab-menu');
     let editMode = false;
     let selectedNote = null;
 
-    fabMain.addEventListener('click', () => {
-      fabMenu.style.display = fabMenu.style.display === 'flex' ? 'none' : 'flex';
-    });
-
-    function addNote() {
-      const text = prompt("Enter note text:");
-      if (!text) return;
-      fetch(`${scriptUrl}?action=add&text=${encodeURIComponent(text)}`)
-        .then(r => r.json())
-        .then(loadNotes);
+    async function fetchNotes() {
+      const res = await fetch(`${scriptUrl}?action=list`);
+      const notes = await res.json();
+      renderNotes(notes);
     }
 
-    function addImage() {
-      const url = prompt("Enter image URL:");
+    function renderNotes(notes) {
+      const board = document.getElementById('board');
+      board.innerHTML = '';
+      notes.forEach(n => {
+        const div = document.createElement('div');
+        div.className = 'note';
+        div.style.left = n.X + 'px';
+        div.style.top = n.Y + 'px';
+        div.style.background = n.Color;
+        div.dataset.id = n.ID;
+
+        if (n.ImageURL) {
+          const img = document.createElement('img');
+          img.src = n.ImageURL;
+          div.appendChild(img);
+        }
+        const text = document.createElement('div');
+        text.contentEditable = true;
+        text.innerText = n.Text;
+        text.onblur = () => saveEdit(n.ID, text.innerText);
+        div.appendChild(text);
+
+        board.appendChild(div);
+      });
+    }
+
+    async function saveEdit(id, text) {
+      await fetch(`${scriptUrl}?action=edit&id=${id}&text=${encodeURIComponent(text)}`);
+    }
+
+    async function addNote() {
+      const params = new URLSearchParams({
+        action: 'add',
+        text: '',
+        color: '#fffb7d',
+        x: 50,
+        y: 50,
+        pinned: 'false',
+        imageUrl: ''
+      });
+      await fetch(`${scriptUrl}?${params}`);
+      fetchNotes();
+    }
+
+    async function addImage() {
+      const url = prompt("Enter image URL");
       if (!url) return;
-      fetch(`${scriptUrl}?action=add&imageUrl=${encodeURIComponent(url)}`)
-        .then(r => r.json())
-        .then(loadNotes);
+      const params = new URLSearchParams({
+        action: 'add',
+        text: '',
+        color: '#fff',
+        x: 50,
+        y: 50,
+        pinned: 'false',
+        imageUrl: url
+      });
+      await fetch(`${scriptUrl}?${params}`);
+      fetchNotes();
     }
 
-    function toggleEditMode() {
+    function toggleEdit() {
       editMode = !editMode;
       alert("Edit mode " + (editMode ? "ON" : "OFF"));
     }
 
-    function deleteSelected() {
-      if (!selectedNote) { alert("No note selected"); return; }
-      fetch(`${scriptUrl}?action=delete&id=${selectedNote}`)
-        .then(r => r.json())
-        .then(loadNotes);
+    async function deleteSelected() {
+      const id = prompt("Enter note ID to delete");
+      if (!id) return;
+      await fetch(`${scriptUrl}?action=delete&id=${id}`);
+      fetchNotes();
     }
 
-    function loadNotes() {
-      board.innerHTML = '';
-      fetch(`${scriptUrl}?action=list`)
-        .then(r => r.json())
-        .then(notes => {
-          notes.forEach(n => {
-            const div = document.createElement('div');
-            div.className = 'note';
-            div.style.left = n.X + "px";
-            div.style.top = n.Y + "px";
-            div.style.background = n.Color;
-            div.dataset.id = n.ID;
-
-            if (n.ImageURL) {
-              const img = document.createElement('img');
-              img.src = n.ImageURL;
-              div.appendChild(img);
-            } else {
-              div.innerText = n.Text;
-            }
-
-            div.addEventListener('click', () => {
-              if (editMode) {
-                selectedNote = n.ID;
-                div.style.border = "2px solid red";
-              }
-            });
-
-            board.appendChild(div);
-          });
-        });
+    function toggleFab() {
+      document.getElementById('fab').classList.toggle('open');
     }
-    loadNotes();
+
+    fetchNotes();
   </script>
 </body>
 </html>
