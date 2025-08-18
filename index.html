@@ -4,145 +4,138 @@
 <meta charset="UTF-8">
 <title>Love Notes</title>
 <style>
-  body {
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #f0f0f0;
-    font-family: sans-serif;
-  }
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f0f0f0;
+  font-family: sans-serif;
+}
 
-  #board {
-    position: relative;
-    width: calc(100% - 10px);
-    height: calc(100% - 10px);
-    margin: 5px;
-    background: #fff;
-    border: 5px solid #ccc;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-  }
+#board {
+  position: relative;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  margin: 5px;
+  background: #fff;
+  border: 5px solid #ccc;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
 
-  .note {
-    position: absolute;
-    width: 200px;
-    min-height: 120px;
-    border-radius: 6px;
-    padding: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    cursor: grab;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    color: #000;
-  }
+.note {
+  position: absolute;
+  width: 200px;
+  min-height: 120px;
+  border-radius: 6px;
+  padding: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  cursor: grab;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #000;
+}
 
-  .note textarea {
-    width: 100%;
-    height: 80px;
-    border: none;
-    resize: none;
-    background: transparent;
-    font-size: 14px;
-    outline: none;
-    pointer-events: none;
-  }
+.note textarea {
+  width: 100%;
+  height: 80px;
+  border: none;
+  resize: none;
+  background: transparent;
+  font-size: 14px;
+  outline: none;
+  pointer-events: none;
+}
 
-  .note.adding textarea,
-  .note.editing textarea {
-    pointer-events: auto;
-  }
+.note.adding textarea,
+.note.editing textarea {
+  pointer-events: auto;
+}
 
-  .note img {
-    max-width: 100%;
-    max-height: 200px;
-    object-fit: contain;
-    border-radius: 4px;
-  }
+.note img {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: 4px;
+}
 
-  .note .actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
+.note .actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-  .note .delete {
-    cursor: pointer;
-    color: red;
-    font-weight: bold;
-    display: none;
-  }
+.note .delete {
+  cursor: pointer;
+  color: red;
+  font-weight: bold;
+  display: none;
+}
 
-  .note-main {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-  }
+.color-picker {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  border: 1px solid #999;
+  border-radius: 3px;
+  z-index: 10000;
+}
+.color-picker input {
+  display: none;
+}
 
-  .color-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+/* Floating Action Button */
+#fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
 
-  .color-btn {
-    width: 20px;
-    height: 20px;
-    border: 1px solid #999;
-    border-radius: 3px;
-    cursor: pointer;
-  }
+#fabMain {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #2196f3;
+  color: #fff;
+  font-size: 28px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
 
-  /* Floating Action Button */
-  #fab {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-  }
+#fabOptions {
+  display: none;
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  flex-direction: column;
+  gap: 10px;
+}
 
-  #fabMain {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    border: none;
-    background: #2196f3;
-    color: #fff;
-    font-size: 28px;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  }
+#fabOptions button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #4caf50;
+  color: #fff;
+  cursor: pointer;
+}
 
-  #fabOptions {
-    display: none;
-    position: absolute;
-    bottom: 70px;
-    right: 0;
-    flex-direction: column;
-    gap: 10px;
-  }
+#fabOptions button:hover {
+  background: #45a049;
+}
 
-  #fabOptions button {
-    padding: 8px 12px;
-    border: none;
-    border-radius: 6px;
-    background: #4caf50;
-    color: #fff;
-    cursor: pointer;
-  }
-
-  #fabOptions button:hover {
-    background: #45a049;
-  }
-
-  .pin-icon {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    fill: #333;
-  }
+.pin-icon {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  fill: #333;
+}
 
 </style>
 </head>
@@ -169,113 +162,115 @@ const deleteNotesBtn = document.getElementById('deleteNotes');
 const addImageBtn = document.getElementById('addImage');
 
 fabMain.addEventListener('click', () => {
-  fabOptions.style.display = fabOptions.style.display === 'flex' ? 'none' : 'flex';
+  fabOptions.style.display = fabOptions.style.display==='flex'?'none':'flex';
 });
-
-document.addEventListener('click', (e) => {
-  if (!fabMain.contains(e.target) && !fabOptions.contains(e.target)) {
-    fabOptions.style.display = 'none';
+document.addEventListener('click', e=>{
+  if(!fabMain.contains(e.target) && !fabOptions.contains(e.target)){
+    fabOptions.style.display='none';
   }
 });
 
 let zIndexCounter = 1;
 
-function getContrastColor(bgColor) {
-  const color = bgColor.charAt(0)==='#' ? bgColor.substring(1,7) : bgColor;
-  const r = parseInt(color.substring(0,2),16);
-  const g = parseInt(color.substring(2,4),16);
-  const b = parseInt(color.substring(4,6),16);
-  const luminance = (0.299*r + 0.587*g + 0.114*b)/255;
-  return luminance > 0.5 ? '#000000' : '#ffffff';
+function getContrastColor(bgColor){
+  const color = bgColor.charAt(0)==='#'?bgColor.substring(1,7):bgColor;
+  const r=parseInt(color.substring(0,2),16);
+  const g=parseInt(color.substring(2,4),16);
+  const b=parseInt(color.substring(4,6),16);
+  const lum=(0.299*r+0.587*g+0.114*b)/255;
+  return lum>0.5?'#000000':'#ffffff';
 }
 
-function createNote(x=50, y=50, text='', color='#fffb7d', imageUrl=null, showColor=true) {
+function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null,showColor=true){
   const note = document.createElement('div');
-  note.className = 'note';
-  note.style.left = x + 'px';
-  note.style.top = y + 'px';
-  note.style.background = color;
-  note.style.color = getContrastColor(color);
-  note.style.zIndex = zIndexCounter++;
+  note.className='note';
+  note.style.left=x+'px';
+  note.style.top=y+'px';
+  note.style.background=color;
+  note.style.color=getContrastColor(color);
+  note.style.zIndex=zIndexCounter++;
 
   // Actions
-  const actions = document.createElement('div');
-  actions.className = 'actions';
+  const actions=document.createElement('div');
+  actions.className='actions';
 
-  const pin = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  const pin=document.createElementNS("http://www.w3.org/2000/svg","svg");
   pin.classList.add('pin-icon');
-  pin.innerHTML = '<path d="M12 2C10.343 2 9 3.343 9 5c0 1.657 3 7 3 7s3-5.343 3-7c0-1.657-1.343-3-3-3zm0 9.5c-1.38 0-2.5 1.12-2.5 2.5S10.62 16.5 12 16.5 14.5 15.38 14.5 14 13.38 11.5 12 11.5z"/>';
-  pin.addEventListener('click', () => {
-    if (note.classList.contains('pinned')) {
+  pin.innerHTML='<path d="M12 2C10.343 2 9 3.343 9 5c0 1.657 3 7 3 7s3-5.343 3-7c0-1.657-1.343-3-3-3zm0 9.5c-1.38 0-2.5 1.12-2.5 2.5S10.62 16.5 12 16.5 14.5 15.38 14.5 14 13.38 11.5 12 11.5z"/>';
+  pin.addEventListener('click', ()=>{
+    if(note.classList.contains('pinned')){
       note.classList.remove('pinned');
-      note.style.zIndex = '';
-    } else {
+      note.style.zIndex='';
+    }else{
       note.classList.add('pinned');
-      note.style.zIndex = 9999;
+      note.style.zIndex=9999;
     }
   });
 
-  const del = document.createElement('span');
-  del.className = 'delete';
-  del.textContent = 'x';
-  del.onclick = () => note.remove();
+  const del=document.createElement('span');
+  del.className='delete';
+  del.textContent='x';
+  del.onclick=()=>{ note.remove(); if(colorPicker) colorPicker.remove(); };
 
   actions.appendChild(pin);
   actions.appendChild(del);
-
-  // Main content + sidebar
-  const noteMain = document.createElement('div');
-  noteMain.className = 'note-main';
-
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.style.color = getContrastColor(color);
-  textarea.addEventListener('blur', () => {
-    note.classList.remove('editing','adding');
-    colorSidebar.style.display = 'none';
-  });
-  textarea.addEventListener('keydown', e => {
-    if (e.key==='Enter'){ e.preventDefault(); textarea.blur(); }
-  });
-
-  // Color picker sidebar
-  const colorSidebar = document.createElement('div');
-  colorSidebar.className = 'color-sidebar';
-  colorSidebar.style.display = showColor ? 'flex' : 'none';
-
-  const colorBtn = document.createElement('div');
-  colorBtn.className = 'color-btn';
-  colorBtn.style.background = color;
-
-  const colorInput = document.createElement('input');
-  colorInput.type = 'color';
-  colorInput.style.display = 'none';
-  colorInput.value = color;
-
-  colorBtn.addEventListener('click', ()=> colorInput.click());
-  colorInput.addEventListener('input', e=>{
-    note.style.background = e.target.value;
-    textarea.style.color = getContrastColor(e.target.value);
-    colorBtn.style.background = e.target.value;
-  });
-
-  colorSidebar.appendChild(colorBtn);
-  colorSidebar.appendChild(colorInput);
-
-  noteMain.appendChild(textarea);
-  noteMain.appendChild(colorSidebar);
-
   note.appendChild(actions);
-  note.appendChild(noteMain);
 
+  const textarea=document.createElement('textarea');
+  textarea.value=text;
+  textarea.style.color=getContrastColor(color);
+  textarea.addEventListener('blur', ()=>{
+    note.classList.remove('adding','editing');
+    if(colorPicker) colorPicker.style.display='none';
+  });
+  textarea.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); textarea.blur(); }
+  });
+  note.appendChild(textarea);
+
+  // Optional image
   if(imageUrl){
-    const img = document.createElement('img');
-    img.src = imageUrl;
+    const img=document.createElement('img');
+    img.src=imageUrl;
     note.appendChild(img);
   }
 
-  makeDraggable(note);
   board.appendChild(note);
+
+  // External color picker
+  let colorPicker=null;
+  if(showColor){
+    colorPicker=document.createElement('div');
+    colorPicker.className='color-picker';
+    colorPicker.style.background=color;
+    const input=document.createElement('input');
+    input.type='color';
+    input.value=color;
+    colorPicker.appendChild(input);
+    board.appendChild(colorPicker);
+
+    // Position beside note
+    function updateColorPickerPos(){
+      const rect=note.getBoundingClientRect();
+      const boardRect=board.getBoundingClientRect();
+      colorPicker.style.left=(rect.right-boardRect.left+5)+'px';
+      colorPicker.style.top=(rect.top-boardRect.top)+'px';
+    }
+    updateColorPickerPos();
+
+    // Move color picker when dragging
+    note.updateColorPickerPos=updateColorPickerPos;
+
+    colorPicker.addEventListener('click', ()=>input.click());
+    input.addEventListener('input', e=>{
+      note.style.background=e.target.value;
+      textarea.style.color=getContrastColor(e.target.value);
+      colorPicker.style.background=e.target.value;
+    });
+  }
+
+  makeDraggable(note);
+
   return note;
 }
 
@@ -283,23 +278,23 @@ function makeDraggable(el){
   let isDragging=false, offsetX, offsetY;
   el.addEventListener('mousedown', e=>{
     if(['TEXTAREA','INPUT','IMG','svg','path'].includes(e.target.tagName)) return;
-    isDragging = true;
-    offsetX = e.offsetX;
-    offsetY = e.offsetY;
+    isDragging=true;
+    offsetX=e.offsetX; offsetY=e.offsetY;
     el.style.cursor='grabbing';
   });
   document.addEventListener('mousemove', e=>{
     if(!isDragging) return;
-    const rect = board.getBoundingClientRect();
-    el.style.left = (e.clientX - rect.left - offsetX)+'px';
-    el.style.top = (e.clientY - rect.top - offsetY)+'px';
+    const rect=board.getBoundingClientRect();
+    el.style.left=(e.clientX-rect.left-offsetX)+'px';
+    el.style.top=(e.clientY-rect.top-offsetY)+'px';
+    if(el.updateColorPickerPos) el.updateColorPickerPos();
   });
   document.addEventListener('mouseup', ()=>{ isDragging=false; el.style.cursor='grab'; });
 }
 
 // FAB actions
 addNoteBtn.addEventListener('click', ()=>{
-  const note = createNote(60,60,'','#fffb7d',null,true);
+  const note=createNote(60,60,'','#fffb7d',null,true);
   note.classList.add('adding');
   note.querySelector('textarea').focus();
 });
@@ -307,19 +302,21 @@ addNoteBtn.addEventListener('click', ()=>{
 editNotesBtn.addEventListener('click', ()=>{
   document.querySelectorAll('.note').forEach(note=>{
     note.classList.toggle('editing');
-    const sidebar = note.querySelector('.color-sidebar');
-    if(sidebar) sidebar.style.display = note.classList.contains('editing') ? 'flex' : 'none';
+    if(note.updateColorPickerPos){
+      const cp=board.querySelector('.color-picker');
+      if(cp) cp.style.display=note.classList.contains('editing')?'block':'none';
+    }
   });
 });
 
 deleteNotesBtn.addEventListener('click', ()=>{
   document.querySelectorAll('.note .delete').forEach(del=>{
-    del.style.display = del.style.display==='inline' ? 'none':'inline';
+    del.style.display=del.style.display==='inline'?'none':'inline';
   });
 });
 
 addImageBtn.addEventListener('click', ()=>{
-  const url = prompt('Enter image URL:');
+  const url=prompt('Enter image URL:');
   if(url) createNote(80,80,'','#ffffff',url,true);
 });
 </script>
