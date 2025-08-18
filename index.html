@@ -76,7 +76,7 @@ body {
   display: none;
 }
 
-.color-picker {
+.color-button {
   width: 24px;
   height: 24px;
   border-radius: 3px;
@@ -85,11 +85,9 @@ body {
   position: absolute;
   top: 5px;
   right: 5px;
+  display: none; /* shown only during adding/editing */
   padding: 0;
   margin: 0;
-  appearance: none;
-  -webkit-appearance: none;
-  display: none; /* visible only during adding/editing */
 }
 
 /* Floating Action Button */
@@ -163,8 +161,12 @@ const editNotesBtn = document.getElementById('editNotes');
 const deleteNotesBtn = document.getElementById('deleteNotes');
 const addImageBtn = document.getElementById('addImage');
 
-fabMain.addEventListener('click', () => { fabOptions.style.display = fabOptions.style.display === 'flex' ? 'none' : 'flex'; });
-document.addEventListener('click', e => { if(!fabMain.contains(e.target) && !fabOptions.contains(e.target)) fabOptions.style.display='none'; });
+fabMain.addEventListener('click', () => {
+  fabOptions.style.display = fabOptions.style.display === 'flex' ? 'none' : 'flex';
+});
+document.addEventListener('click', e => {
+  if(!fabMain.contains(e.target) && !fabOptions.contains(e.target)) fabOptions.style.display='none';
+});
 
 let zIndexCounter = 1;
 
@@ -193,7 +195,15 @@ function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null){
   const pin = document.createElementNS("http://www.w3.org/2000/svg","svg");
   pin.classList.add('pin-icon');
   pin.innerHTML = '<path d="M12 2C10.343 2 9 3.343 9 5c0 1.657 3 7 3 7s3-5.343 3-7c0-1.657-1.343-3-3-3zm0 9.5c-1.38 0-2.5 1.12-2.5 2.5S10.62 16.5 12 16.5 14.5 15.38 14.5 14 13.38 11.5 12 11.5z"/>';
-  pin.addEventListener('click', ()=>{ if(note.classList.contains('pinned')){ note.classList.remove('pinned'); note.style.zIndex=''; }else{ note.classList.add('pinned'); note.style.zIndex=9999; }});
+  pin.addEventListener('click', ()=>{
+    if(note.classList.contains('pinned')){
+      note.classList.remove('pinned');
+      note.style.zIndex='';
+    } else {
+      note.classList.add('pinned');
+      note.style.zIndex=9999;
+    }
+  });
 
   const del = document.createElement('span');
   del.className = 'delete';
@@ -207,22 +217,29 @@ function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null){
   const textarea = document.createElement('textarea');
   textarea.value = text;
   textarea.style.color = getContrastColor(color);
-  textarea.addEventListener('blur', ()=>{ note.classList.remove('adding','editing'); colorInput.style.display='none'; });
+  textarea.addEventListener('blur', ()=>{ note.classList.remove('adding','editing'); colorButton.style.display='none'; });
   textarea.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); textarea.blur(); }});
   note.appendChild(textarea);
 
   if(imageUrl){ const img = document.createElement('img'); img.src=imageUrl; note.appendChild(img); }
 
-  // Color picker square
-  const colorInput = document.createElement('input');
-  colorInput.type = 'color';
-  colorInput.value = color;
-  colorInput.className = 'color-picker';
-  note.appendChild(colorInput);
+  // Color button
+  const colorButton = document.createElement('button');
+  colorButton.className = 'color-button';
+  colorButton.style.background = color;
+  note.appendChild(colorButton);
 
-  colorInput.addEventListener('input', e=>{
+  const hiddenInput = document.createElement('input');
+  hiddenInput.type='color';
+  hiddenInput.value=color;
+  hiddenInput.style.display='none';
+  note.appendChild(hiddenInput);
+
+  colorButton.addEventListener('click', ()=> hiddenInput.click());
+  hiddenInput.addEventListener('input', e=>{
     note.style.background = e.target.value;
     textarea.style.color = getContrastColor(e.target.value);
+    colorButton.style.background = e.target.value;
   });
 
   board.appendChild(note);
@@ -234,7 +251,7 @@ function createNote(x=50,y=50,text='',color='#fffb7d',imageUrl=null){
 function makeDraggable(el){
   let isDragging=false, offsetX, offsetY;
   el.addEventListener('mousedown', e=>{
-    if(['TEXTAREA','INPUT','IMG','svg','path'].includes(e.target.tagName)) return;
+    if(['TEXTAREA','INPUT','IMG','svg','path','BUTTON'].includes(e.target.tagName)) return;
     isDragging = true;
     offsetX = e.offsetX; offsetY = e.offsetY;
     el.style.cursor='grabbing';
@@ -253,13 +270,13 @@ addNoteBtn.addEventListener('click', ()=>{
   const note = createNote(60,60,'','#fffb7d');
   note.classList.add('adding');
   note.querySelector('textarea').focus();
-  note.querySelector('.color-picker').style.display='block';
+  note.querySelector('.color-button').style.display='block';
 });
 
 editNotesBtn.addEventListener('click', ()=>{
   document.querySelectorAll('.note').forEach(note=>{
     note.classList.toggle('editing');
-    note.querySelector('.color-picker').style.display = note.classList.contains('editing')?'block':'none';
+    note.querySelector('.color-button').style.display = note.classList.contains('editing')?'block':'none';
   });
 });
 
