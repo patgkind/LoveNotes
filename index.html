@@ -142,6 +142,7 @@
 
     let mode = null; // null, "edit", "delete"
     let notes = [];
+    let data = [];
 
     // FAB toggle
     fab.addEventListener("click", () => {
@@ -316,7 +317,7 @@ fetch(`${scriptURL}?action=get`)
       fetch(`${scriptURL}?action=get`)
         .then(res => res.json())
         .then(data => console.log("Notes:", data));
-        notes = renderNote.data;
+        notes = data;
         renderAllNotes();
       } catch (err) {
         console.error("Fetch error", err);
