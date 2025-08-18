@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Sticky Notes Board</title>
+<title>Love Notes</title>
 <style>
   body {
     margin: 0;
@@ -69,16 +69,19 @@
     align-items: center;
   }
 
-  .note .pin {
-    cursor: pointer;
-    font-size: 14px;
-  }
-
   .note .delete {
     cursor: pointer;
     color: red;
     font-weight: bold;
     display: none;
+  }
+
+  .color-btn {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #999;
+    border-radius: 3px;
+    cursor: pointer;
   }
 
   /* Floating Action Button */
@@ -121,6 +124,14 @@
   #fabOptions button:hover {
     background: #45a049;
   }
+
+  .pin-icon {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    fill: #333;
+  }
+
 </style>
 </head>
 <body>
@@ -136,143 +147,147 @@
     </div>
   </div>
 
-  <script>
-    const board = document.getElementById('board');
-    const fabMain = document.getElementById('fabMain');
-    const fabOptions = document.getElementById('fabOptions');
-    const addNoteBtn = document.getElementById('addNote');
-    const editNotesBtn = document.getElementById('editNotes');
-    const deleteNotesBtn = document.getElementById('deleteNotes');
-    const addImageBtn = document.getElementById('addImage');
+<script>
+const board = document.getElementById('board');
+const fabMain = document.getElementById('fabMain');
+const fabOptions = document.getElementById('fabOptions');
+const addNoteBtn = document.getElementById('addNote');
+const editNotesBtn = document.getElementById('editNotes');
+const deleteNotesBtn = document.getElementById('deleteNotes');
+const addImageBtn = document.getElementById('addImage');
 
-    fabMain.addEventListener('click', () => {
-      fabOptions.style.display = fabOptions.style.display === 'flex' ? 'none' : 'flex';
-    });
+fabMain.addEventListener('click', () => {
+  fabOptions.style.display = fabOptions.style.display === 'flex' ? 'none' : 'flex';
+});
 
-    document.addEventListener('click', (e) => {
-      if (!fabMain.contains(e.target) && !fabOptions.contains(e.target)) {
-        fabOptions.style.display = 'none';
-      }
-    });
+document.addEventListener('click', (e) => {
+  if (!fabMain.contains(e.target) && !fabOptions.contains(e.target)) {
+    fabOptions.style.display = 'none';
+  }
+});
 
-    let zIndexCounter = 1;
+let zIndexCounter = 1;
 
-    function createNote(x=50, y=50, text='', color='#fffb7d', imageUrl=null) {
-      const note = document.createElement('div');
-      note.className = 'note';
-      note.style.left = x + 'px';
-      note.style.top = y + 'px';
-      note.style.background = color;
-      note.style.zIndex = zIndexCounter++;
+function createNote(x=50, y=50, text='', color='#fffb7d', imageUrl=null) {
+  const note = document.createElement('div');
+  note.className = 'note';
+  note.style.left = x + 'px';
+  note.style.top = y + 'px';
+  note.style.background = color;
+  note.style.zIndex = zIndexCounter++;
 
-      // Actions
-      const actions = document.createElement('div');
-      actions.className = 'actions';
+  // Actions
+  const actions = document.createElement('div');
+  actions.className = 'actions';
 
-      const pin = document.createElement('span');
-      pin.className = 'pin';
-      pin.textContent = '📌';
-      pin.onclick = () => {
-        if (note.classList.contains('pinned')) {
-          note.classList.remove('pinned');
-          note.style.zIndex = '';
-        } else {
-          note.classList.add('pinned');
-          note.style.zIndex = 9999;
-        }
-      };
-
-      const del = document.createElement('span');
-      del.className = 'delete';
-      del.textContent = 'x';
-      del.onclick = () => note.remove();
-
-      actions.appendChild(pin);
-      actions.appendChild(del);
-
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      textarea.addEventListener('blur', () => {
-        note.classList.remove('editing', 'adding');
-      });
-      textarea.addEventListener('keydown', e => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          textarea.blur();
-        }
-      });
-
-      // Persistent color picker
-      const colorInput = document.createElement('input');
-      colorInput.type = 'color';
-      colorInput.value = color;
-      colorInput.style.width = '100%';
-      colorInput.title = 'Pick note color';
-      colorInput.addEventListener('input', e => {
-        note.style.background = e.target.value;
-      });
-
-      note.appendChild(actions);
-      note.appendChild(textarea);
-      note.appendChild(colorInput);
-
-      if (imageUrl) {
-        const img = document.createElement('img');
-        img.src = imageUrl;
-        note.appendChild(img);
-      }
-
-      makeDraggable(note);
-      board.appendChild(note);
-      return note;
+  // Pin button as SVG
+  const pin = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  pin.classList.add('pin-icon');
+  pin.innerHTML = '<path d="M12 2C10.343 2 9 3.343 9 5c0 1.657 3 7 3 7s3-5.343 3-7c0-1.657-1.343-3-3-3zm0 9.5c-1.38 0-2.5 1.12-2.5 2.5S10.62 16.5 12 16.5 14.5 15.38 14.5 14 13.38 11.5 12 11.5z"/>';
+  pin.addEventListener('click', () => {
+    if (note.classList.contains('pinned')) {
+      note.classList.remove('pinned');
+      note.style.zIndex = '';
+    } else {
+      note.classList.add('pinned');
+      note.style.zIndex = 9999;
     }
+  });
 
-    function makeDraggable(el) {
-      let isDragging = false;
-      let offsetX, offsetY;
+  const del = document.createElement('span');
+  del.className = 'delete';
+  del.textContent = 'x';
+  del.onclick = () => note.remove();
 
-      el.addEventListener('mousedown', e => {
-        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'IMG') return;
-        isDragging = true;
-        offsetX = e.offsetX;
-        offsetY = e.offsetY;
-        el.style.cursor = 'grabbing';
-      });
+  actions.appendChild(pin);
+  actions.appendChild(del);
 
-      document.addEventListener('mousemove', e => {
-        if (!isDragging) return;
-        const rect = board.getBoundingClientRect();
-        el.style.left = (e.clientX - rect.left - offsetX) + 'px';
-        el.style.top = (e.clientY - rect.top - offsetY) + 'px';
-      });
+  // Textarea
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.addEventListener('blur', () => note.classList.remove('editing', 'adding'));
+  textarea.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); textarea.blur(); }
+  });
 
-      document.addEventListener('mouseup', () => {
-        isDragging = false;
-        el.style.cursor = 'grab';
-      });
-    }
+  // Color picker button
+  const colorBtn = document.createElement('div');
+  colorBtn.className = 'color-btn';
+  colorBtn.style.background = color;
 
-    // FAB Actions
-    addNoteBtn.addEventListener('click', () => {
-      const note = createNote(60, 60);
-      note.classList.add('adding');
-      note.querySelector('textarea').focus();
-    });
+  const colorInput = document.createElement('input');
+  colorInput.type = 'color';
+  colorInput.style.display = 'none';
+  colorInput.value = color;
 
-    editNotesBtn.addEventListener('click', () => {
-      document.querySelectorAll('.note').forEach(note => note.classList.toggle('editing'));
-    });
+  colorBtn.addEventListener('click', () => colorInput.click());
+  colorInput.addEventListener('input', (e) => {
+    note.style.background = e.target.value;
+    colorBtn.style.background = e.target.value;
+  });
 
-    deleteNotesBtn.addEventListener('click', () => {
-      document.querySelectorAll('.note .delete').forEach(del => {
-        del.style.display = del.style.display === 'inline' ? 'none' : 'inline';
-      });
-    });
+  note.appendChild(actions);
+  note.appendChild(textarea);
+  note.appendChild(colorBtn);
+  note.appendChild(colorInput);
 
-    addImageBtn.addEventListener('click', () => {
-      const url = prompt('Enter image URL:');
-      if (url) createNote(80, 80, '', '#ffffff', url);
-    });
-  </script>
+  if (imageUrl) {
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    note.appendChild(img);
+  }
+
+  makeDraggable(note);
+  board.appendChild(note);
+  return note;
+}
+
+function makeDraggable(el) {
+  let isDragging = false;
+  let offsetX, offsetY;
+
+  el.addEventListener('mousedown', e => {
+    if (['TEXTAREA','INPUT','IMG','svg','path'].includes(e.target.tagName)) return;
+    isDragging = true;
+    offsetX = e.offsetX;
+    offsetY = e.offsetY;
+    el.style.cursor = 'grabbing';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const rect = board.getBoundingClientRect();
+    el.style.left = (e.clientX - rect.left - offsetX) + 'px';
+    el.style.top = (e.clientY - rect.top - offsetY) + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    isDragging = false;
+    el.style.cursor = 'grab';
+  });
+}
+
+// FAB actions
+addNoteBtn.addEventListener('click', () => {
+  const note = createNote(60,60);
+  note.classList.add('adding');
+  note.querySelector('textarea').focus();
+});
+
+editNotesBtn.addEventListener('click', () => {
+  document.querySelectorAll('.note').forEach(note => note.classList.toggle('editing'));
+});
+
+deleteNotesBtn.addEventListener('click', () => {
+  document.querySelectorAll('.note .delete').forEach(del => {
+    del.style.display = del.style.display === 'inline' ? 'none' : 'inline';
+  });
+});
+
+addImageBtn.addEventListener('click', () => {
+  const url = prompt('Enter image URL:');
+  if (url) createNote(80, 80, '', '#ffffff', url);
+});
+</script>
 </body>
 </html>
