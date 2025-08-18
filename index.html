@@ -2,155 +2,133 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sticky Notes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Love Notes</title>
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      height: 100vh;
-      background: #f4f4f4;
-      overflow: hidden;
-    }
-
-    #board {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
-
+    body { font-family: system-ui, sans-serif; margin: 0; background: #f0f0f0; }
+    #board { display: flex; flex-wrap: wrap; padding: 10px; gap: 10px; }
     .note {
-      position: absolute;
-      min-width: 180px;
-      max-width: 250px;
-      min-height: 150px;
-      background: #fff9a6; /* default yellow sticky */
+      position: relative;
+      width: 220px;
+      min-height: 160px;
+      background: #fffb7d;
       border-radius: 8px;
-      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-      padding: 28px 12px 12px 12px;
-      box-sizing: border-box;
-      overflow: hidden;
+      padding: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
     }
-
     .note textarea {
-      width: 100%;
-      height: calc(100% - 10px);
+      flex: 1;
       border: none;
       resize: none;
-      background: transparent;
-      font-family: sans-serif;
+      width: 100%;
       font-size: 14px;
+      background: transparent;
       outline: none;
     }
-
-    .note-toolbar {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      display: flex;
-      gap: 6px;
+    .note img {
+      max-width: 100%;
+      margin-top: 5px;
+      border-radius: 4px;
     }
-
-    .note-toolbar button {
-      width: 20px;
-      height: 20px;
+    .note-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 5px;
+    }
+    button {
       border: none;
+      background: rgba(0,0,0,0.1);
+      padding: 4px 8px;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 12px;
-      background: rgba(255, 255, 255, 0.8);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
-
-    .note-toolbar button:hover {
-      background: #eee;
-    }
-
-    #addNoteBtn {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 12px 18px;
-      border: none;
-      border-radius: 8px;
-      background: #4caf50;
-      color: white;
-      cursor: pointer;
-      font-size: 16px;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-    }
-    #addNoteBtn:hover {
-      background: #45a049;
+    button:hover { background: rgba(0,0,0,0.2); }
+    .color-button {
+      position: absolute;
+      top: 5px;
+      right: 5px;
     }
   </style>
 </head>
 <body>
   <div id="board"></div>
-  <button id="addNoteBtn">+ Note</button>
 
   <script>
-    const board = document.getElementById("board");
-    const addNoteBtn = document.getElementById("addNoteBtn");
+    const apiUrl = "https://script.google.com/macros/s/AKfycbyOgP36dXRLEoXmmg3KHUfPNuprLSVTo1k57aQYC8VkYfP4vdROq4X3lhFMvOHyQ1dgKw/exec";
 
-    function createNote(x = 100, y = 100, text = "", color = "#fff9a6") {
-      const note = document.createElement("div");
-      note.className = "note";
-      note.style.left = x + "px";
-      note.style.top = y + "px";
-      note.style.background = color;
-
-      const toolbar = document.createElement("div");
-      toolbar.className = "note-toolbar";
-
-      const pinBtn = document.createElement("button");
-      pinBtn.textContent = "📌";
-
-      const colorBtn = document.createElement("button");
-      colorBtn.textContent = "🎨";
-      colorBtn.onclick = () => {
-        const newColor = prompt("Enter color (name or hex):", color);
-        if (newColor) note.style.background = newColor;
-      };
-
-      const deleteBtn = document.createElement("button");
-      deleteBtn.textContent = "✖";
-      deleteBtn.onclick = () => note.remove();
-
-      toolbar.appendChild(pinBtn);
-      toolbar.appendChild(colorBtn);
-      toolbar.appendChild(deleteBtn);
-
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-
-      note.appendChild(toolbar);
-      note.appendChild(textarea);
-
-      // Dragging logic
-      let isDragging = false;
-      let offsetX, offsetY;
-      note.addEventListener("mousedown", (e) => {
-        if (e.target.tagName === "TEXTAREA") return;
-        isDragging = true;
-        offsetX = e.offsetX;
-        offsetY = e.offsetY;
-        note.style.zIndex = 1000;
-      });
-      document.addEventListener("mousemove", (e) => {
-        if (isDragging) {
-          note.style.left = e.pageX - offsetX + "px";
-          note.style.top = e.pageY - offsetY + "px";
-        }
-      });
-      document.addEventListener("mouseup", () => {
-        isDragging = false;
-        note.style.zIndex = "";
-      });
-
-      board.appendChild(note);
+    // Helper: safe fetch JSON
+    async function fetchJSON(url, opts) {
+      const res = await fetch(url, opts);
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        console.error("Non-JSON response:", text);
+        throw new Error("Bad response from server");
+      }
     }
 
-    addNoteBtn.onclick = () => createNote(100, 100);
+    async function loadNotes() {
+      const notes = await fetchJSON(apiUrl + "?action=list");
+      document.getElementById("board").innerHTML = "";
+      notes.forEach(n => createOrUpdateNote(n));
+    }
+
+    function createOrUpdateNote(note) {
+      let el = document.getElementById(note.ID);
+      if (!el) {
+        el = document.createElement("div");
+        el.className = "note";
+        el.id = note.ID;
+
+        const ta = document.createElement("textarea");
+        ta.value = note.Text;
+        ta.onchange = () => updateNote(note.ID, { text: ta.value });
+        el.appendChild(ta);
+
+        if (note.ImageURL) {
+          const img = document.createElement("img");
+          img.src = note.ImageURL;
+          el.appendChild(img);
+        }
+
+        const btns = document.createElement("div");
+        btns.className = "note-buttons";
+
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Delete";
+        delBtn.onclick = () => deleteNote(note.ID);
+        btns.appendChild(delBtn);
+
+        el.appendChild(btns);
+
+        const colorBtn = document.createElement("input");
+        colorBtn.type = "color";
+        colorBtn.className = "color-button";
+        colorBtn.value = note.Color || "#fffb7d";
+        colorBtn.onchange = () => updateNote(note.ID, { color: colorBtn.value });
+        el.appendChild(colorBtn);
+
+        document.getElementById("board").appendChild(el);
+      }
+      el.style.background = note.Color || "#fffb7d";
+    }
+
+    async function updateNote(id, changes) {
+      const params = new URLSearchParams({ action: "edit", id, ...changes });
+      await fetchJSON(apiUrl + "?" + params.toString());
+      loadNotes();
+    }
+
+    async function deleteNote(id) {
+      const params = new URLSearchParams({ action: "delete", id });
+      await fetchJSON(apiUrl + "?" + params.toString());
+      loadNotes();
+    }
+
+    loadNotes();
   </script>
 </body>
 </html>
