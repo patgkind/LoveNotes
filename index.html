@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Notes Board</title>
+  <title>Sticky Notes Board</title>
   <style>
     body {
       margin: 0;
@@ -11,176 +10,264 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background: #f2f2f2;
+      background: #f0f0f0;
       font-family: sans-serif;
     }
-
-    .board {
+    #board {
       position: relative;
-      width: 90%;
-      height: 90%;
+      width: 90vw;
+      height: 90vh;
       background: #fff;
       border: 5px solid #ccc;
-      border-radius: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      margin: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
       overflow: hidden;
     }
-
     .note {
       position: absolute;
-      width: 160px;
+      width: 200px;
       min-height: 120px;
-      background: #fffb88;
-      border-radius: 8px;
-      box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
+      background: #fffb7d;
+      border-radius: 6px;
       padding: 8px;
-      box-sizing: border-box;
-      cursor: move;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      cursor: grab;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-
     .note textarea {
       width: 100%;
-      height: 100%;
+      height: 80px;
       border: none;
-      background: transparent;
       resize: none;
-      outline: none;
+      background: transparent;
       font-size: 14px;
-      font-family: inherit;
+      outline: none;
+    }
+    .note img {
+      max-width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+    .note .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .note .pin {
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .note .delete {
+      cursor: pointer;
+      color: red;
+      font-weight: bold;
+      display: none; /* only visible in delete mode */
+    }
+    .note.editing textarea,
+    .note.adding textarea {
+      pointer-events: auto;
+    }
+    .note:not(.editing):not(.adding) textarea {
+      pointer-events: none;
     }
 
-    .fab {
+    /* Floating Action Button (FAB) */
+    #fab {
       position: absolute;
       bottom: 20px;
       right: 20px;
+    }
+    #fab button {
       width: 56px;
       height: 56px;
       border-radius: 50%;
-      background: #4caf50;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border: none;
+      background: #2196f3;
       color: #fff;
       font-size: 28px;
       cursor: pointer;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
-
-    .menu {
-      position: absolute;
-      bottom: 80px;
-      right: 20px;
+    #fabOptions {
       display: none;
-      flex-direction: column;
-      gap: 10px;
+      position: absolute;
+      bottom: 70px;
+      right: 0;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      overflow: hidden;
     }
-
-    .menu button {
+    #fabOptions button {
+      display: block;
+      width: 100%;
       padding: 8px 12px;
       border: none;
-      border-radius: 6px;
+      background: #fff;
       cursor: pointer;
-      font-size: 14px;
-      color: #fff;
+      text-align: left;
     }
-
-    .menu button.add { background: #4caf50; }
-    .menu button.edit { background: #2196f3; }
-    .menu button.delete { background: #f44336; }
+    #fabOptions button:hover {
+      background: #eee;
+    }
   </style>
 </head>
 <body>
-  <div class="board" id="board"></div>
+  <div id="board"></div>
 
-  <div class="fab" id="fab">+</div>
-  <div class="menu" id="menu">
-    <button class="add">Add</button>
-    <button class="edit">Edit</button>
-    <button class="delete">Delete</button>
+  <div id="fab">
+    <button id="fabMain">+</button>
+    <div id="fabOptions">
+      <button id="addNote">Add Note</button>
+      <button id="editNotes">Edit Notes</button>
+      <button id="deleteNotes">Delete Notes</button>
+      <button id="addImage">Add Image</button>
+    </div>
   </div>
 
   <script>
     const board = document.getElementById('board');
-    const fab = document.getElementById('fab');
-    const menu = document.getElementById('menu');
-    const addBtn = document.querySelector('.menu .add');
+    const fabMain = document.getElementById('fabMain');
+    const fabOptions = document.getElementById('fabOptions');
+    const addNoteBtn = document.getElementById('addNote');
+    const editNotesBtn = document.getElementById('editNotes');
+    const deleteNotesBtn = document.getElementById('deleteNotes');
+    const addImageBtn = document.getElementById('addImage');
 
-    let zIndexCounter = 1;
+    let mode = null; // 'edit', 'delete', 'add'
 
-    fab.addEventListener('click', () => {
-      menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+    fabMain.addEventListener('click', () => {
+      fabOptions.style.display = fabOptions.style.display === 'block' ? 'none' : 'block';
     });
 
-    addBtn.addEventListener('click', () => {
-      createNote();
-      menu.style.display = 'none';
-    });
-
-    function createNote() {
-      let note = document.createElement('div');
+    function createNote(x=50, y=50, text='', color='#fffb7d', imageUrl=null) {
+      const note = document.createElement('div');
       note.className = 'note';
-      note.style.left = '80px';
-      note.style.top = '80px';
-      note.style.zIndex = zIndexCounter++;
-      note.innerHTML = '<textarea placeholder="Type..."></textarea>';
-      board.appendChild(note);
+      note.style.left = x + 'px';
+      note.style.top = y + 'px';
+      note.style.background = color;
 
-      avoidOverlap(note);
+      const actions = document.createElement('div');
+      actions.className = 'actions';
 
-      const textarea = note.querySelector('textarea');
-      textarea.focus();
+      const pin = document.createElement('span');
+      pin.className = 'pin';
+      pin.textContent = '📌';
+      pin.onclick = () => {
+        if (note.classList.contains('pinned')) {
+          note.classList.remove('pinned');
+          note.style.zIndex = '';
+        } else {
+          note.classList.add('pinned');
+          note.style.zIndex = 9999;
+        }
+      };
+
+      const del = document.createElement('span');
+      del.className = 'delete';
+      del.textContent = 'x';
+      del.onclick = () => note.remove();
+
+      actions.appendChild(pin);
+      actions.appendChild(del);
+
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+
+      // Disable editing unless in edit/add mode
+      textarea.addEventListener('blur', () => {
+        note.classList.remove('editing', 'adding');
+      });
+      textarea.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          textarea.blur();
+        }
+      });
+
+      note.appendChild(actions);
+      note.appendChild(textarea);
+
+      if (imageUrl) {
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        note.appendChild(img);
+      }
 
       makeDraggable(note);
-    }
+      board.appendChild(note);
 
-    function avoidOverlap(newNote) {
-      const notes = Array.from(document.querySelectorAll('.note'));
-      let hasOverlap = true;
-      while (hasOverlap) {
-        hasOverlap = false;
-        for (let n of notes) {
-          if (n === newNote) continue;
-          if (isOverlapping(newNote, n)) {
-            let top = parseInt(newNote.style.top) || 0;
-            let left = parseInt(newNote.style.left) || 0;
-            newNote.style.top = (top + 30) + 'px';
-            newNote.style.left = (left + 30) + 'px';
-            hasOverlap = true;
-          }
-        }
-      }
-    }
-
-    function isOverlapping(a, b) {
-      const rect1 = a.getBoundingClientRect();
-      const rect2 = b.getBoundingClientRect();
-      return !(
-        rect1.right < rect2.left ||
-        rect1.left > rect2.right ||
-        rect1.bottom < rect2.top ||
-        rect1.top > rect2.bottom
-      );
+      return note;
     }
 
     function makeDraggable(el) {
-      let offsetX, offsetY, dragging = false;
+      let isDragging = false;
+      let offsetX, offsetY;
 
-      el.addEventListener('mousedown', (e) => {
-        dragging = true;
-        offsetX = e.clientX - el.offsetLeft;
-        offsetY = e.clientY - el.offsetTop;
-        el.style.zIndex = zIndexCounter++;
+      el.addEventListener('mousedown', e => {
+        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+        isDragging = true;
+        offsetX = e.offsetX;
+        offsetY = e.offsetY;
+        el.style.cursor = 'grabbing';
       });
 
-      document.addEventListener('mousemove', (e) => {
-        if (dragging) {
-          el.style.left = (e.clientX - offsetX) + 'px';
-          el.style.top = (e.clientY - offsetY) + 'px';
-        }
+      document.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        const rect = board.getBoundingClientRect();
+        el.style.left = (e.clientX - rect.left - offsetX) + 'px';
+        el.style.top = (e.clientY - rect.top - offsetY) + 'px';
       });
 
-      document.addEventListener('mouseup', () => dragging = false);
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+        el.style.cursor = 'grab';
+      });
     }
+
+    addNoteBtn.addEventListener('click', () => {
+      const note = createNote(60, 60);
+      note.classList.add('adding');
+      const textarea = note.querySelector('textarea');
+      textarea.focus();
+
+      // Show color picker while adding
+      const colorInput = document.createElement('input');
+      colorInput.type = 'color';
+      colorInput.value = '#fffb7d';
+      colorInput.style.width = '100%';
+      colorInput.oninput = e => {
+        note.style.background = e.target.value;
+      };
+      note.appendChild(colorInput);
+      textarea.addEventListener('blur', () => colorInput.remove());
+    });
+
+    editNotesBtn.addEventListener('click', () => {
+      mode = 'edit';
+      document.querySelectorAll('.note').forEach(note => {
+        note.classList.add('editing');
+        const textarea = note.querySelector('textarea');
+        textarea.removeAttribute('readonly');
+      });
+    });
+
+    deleteNotesBtn.addEventListener('click', () => {
+      mode = 'delete';
+      document.querySelectorAll('.note .delete').forEach(del => del.style.display = 'block');
+    });
+
+    addImageBtn.addEventListener('click', () => {
+      const url = prompt('Enter image URL:');
+      if (url) {
+        createNote(80, 80, '', '#ffffff', url);
+      }
+    });
   </script>
 </body>
 </html>
