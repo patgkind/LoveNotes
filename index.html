@@ -316,7 +316,7 @@ fetch(`${scriptURL}?action=get`)
       fetch(`${scriptURL}?action=get`)
         .then(res => res.json())
         .then(data => console.log("Notes:", data));
-        renderNote.notes = data;
+        notes = renderNote.data;
         renderAllNotes();
       } catch (err) {
         console.error("Fetch error", err);
