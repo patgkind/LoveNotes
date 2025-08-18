@@ -313,8 +313,10 @@ fetch(`${scriptURL}?action=get`)
  */
    async function fetchNotes() {
       try {
-        const res = await fetch(scriptURL + "?action=get");
-        const data = await res.json();
+// Add a note
+fetch(`${scriptURL}?action=add&content=${encodeURIComponent(content)}&color=${color}&x=${x}&y=${y}`)
+  .then(res => res.json())
+  .then(data => console.log("Added:", data));
         notes = data;
         renderAllNotes();
       } catch (err) {
