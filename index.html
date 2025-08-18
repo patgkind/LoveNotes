@@ -5,237 +5,165 @@
   <title>Love Notes</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
       margin: 0;
-      padding: 0;
-      background: #f5f5f5;
-    }
-    h1 {
-      text-align: center;
-      padding: 10px;
-      margin: 0;
-      background: #ff4081;
-      color: white;
-    }
-    #notes {
+      font-family: system-ui, sans-serif;
+      background: #ececec;
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      padding: 20px;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    #board {
+      position: relative;
+      width: 90%;
+      height: 90vh;
+      background: #fdfdfd;
+      border: 2px solid #ccc;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.2);
+      overflow: hidden;
     }
     .note {
-      position: relative;
-      width: 200px;
-      min-height: 100px;
-      padding: 10px;
+      position: absolute;
+      width: 180px;
+      min-height: 120px;
+      padding: 8px;
+      border: 1px solid #bbb;
       border-radius: 8px;
-      background: #fff8dc;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.2);
+      background: #fffb7d;
       cursor: grab;
+      overflow-wrap: break-word;
     }
-    .note.dragging {
-      opacity: 0.5;
-    }
-    .color-btn {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      width: 20px;
-      height: 20px;
-      border-radius: 4px;
-      border: none;
-      cursor: pointer;
-    }
-    .color-picker {
-      position: absolute;
-      display: none;
-      z-index: 1000;
+    .note img {
+      max-width: 100%;
+      border-radius: 6px;
     }
     /* FAB */
-    #fab {
-      position: fixed;
+    .fab {
+      position: absolute;
       bottom: 20px;
       right: 20px;
-      width: 60px;
-      height: 60px;
-      background: #ff4081;
-      border-radius: 50%;
-      color: white;
-      font-size: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-      z-index: 1000;
     }
-    #fab-menu {
-      position: fixed;
-      bottom: 90px;
-      right: 20px;
-      display: flex;
+    .fab button {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      background: #ff4081;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    }
+    .fab-menu {
+      display: none;
+      position: absolute;
+      bottom: 70px;
+      right: 0;
       flex-direction: column;
       gap: 10px;
-      z-index: 1000;
     }
-    #fab-menu button {
-      background: #fff;
-      border: none;
-      padding: 10px 15px;
+    .fab-menu button {
+      width: auto;
+      height: auto;
+      padding: 8px 14px;
       border-radius: 8px;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+      font-size: 14px;
+      background: #fff;
+      color: #333;
+      border: 1px solid #ccc;
       cursor: pointer;
-    }
-    .hidden {
-      display: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
   </style>
 </head>
 <body>
-  <h1>Love Notes</h1>
-  <div id="notes"></div>
+  <div id="board"></div>
 
-  <!-- FAB -->
-  <div id="fab">+</div>
-  <div id="fab-menu" class="hidden">
-    <button onclick="openAddNoteDialog()">📝 Add Note</button>
-    <button onclick="openAddImageDialog()">🖼 Add Image</button>
-    <button onclick="toggleEditMode()">✏️ Edit Mode</button>
-    <button onclick="enableDeleteMode()">🗑 Delete</button>
+  <div class="fab">
+    <button id="fab-main">+</button>
+    <div class="fab-menu" id="fab-menu">
+      <button onclick="addNote()">Add Note</button>
+      <button onclick="addImage()">Add Image</button>
+      <button onclick="toggleEditMode()">Edit Mode</button>
+      <button onclick="deleteSelected()">Delete</button>
+    </div>
   </div>
 
-  <!-- Hidden color input -->
-  <input type="color" id="color-picker" class="color-picker" />
-
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyOgP36dXRLEoXmmg3KHUfPNuprLSVTo1k57aQYC8VkYfP4vdROq4X3lhFMvOHyQ1dgKw/exec";
-    const notesContainer = document.getElementById("notes");
-    const colorPicker = document.getElementById("color-picker");
-    const fab = document.getElementById("fab");
-    const fabMenu = document.getElementById("fab-menu");
-    let notesData = {};
-    let editMode = false, deleteMode = false;
-    let currentColorTarget = null;
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbyOgP36dXRLEoXmmg3KHUfPNuprLSVTo1k57aQYC8VkYfP4vdROq4X3lhFMvOHyQ1dgKw/exec";
+    const board = document.getElementById('board');
+    const fabMain = document.getElementById('fab-main');
+    const fabMenu = document.getElementById('fab-menu');
+    let editMode = false;
+    let selectedNote = null;
 
-    fab.addEventListener("click", () => {
-      fabMenu.classList.toggle("hidden");
+    fabMain.addEventListener('click', () => {
+      fabMenu.style.display = fabMenu.style.display === 'flex' ? 'none' : 'flex';
     });
 
-    async function fetchNotes() {
-      const res = await fetch(API_URL + "?action=main");
-      const json = await res.json();
-      renderNotes(json);
-    }
-
-    function renderNotes(data) {
-      const currentIds = new Set(Object.keys(notesData));
-      const newIds = new Set(data.map(n => n.id));
-
-      // Remove deleted notes
-      currentIds.forEach(id => {
-        if (!newIds.has(id)) {
-          const el = document.getElementById("note-" + id);
-          if (el) el.remove();
-          delete notesData[id];
-        }
-      });
-
-      // Add or update
-      data.forEach(note => {
-        notesData[note.id] = note;
-        let el = document.getElementById("note-" + note.id);
-        if (!el) {
-          el = createNoteElement(note);
-          notesContainer.appendChild(el);
-        } else {
-          el.querySelector(".content").textContent = note.text;
-          el.style.background = note.color;
-          el.querySelector(".color-btn").style.background = note.color;
-        }
-      });
-    }
-
-    function createNoteElement(note) {
-      const div = document.createElement("div");
-      div.className = "note";
-      div.id = "note-" + note.id;
-      div.style.background = note.color || "#fff8dc";
-      div.draggable = true;
-
-      const content = document.createElement("div");
-      content.className = "content";
-      content.textContent = note.text;
-      div.appendChild(content);
-
-      const colorBtn = document.createElement("button");
-      colorBtn.className = "color-btn";
-      colorBtn.style.background = note.color || "#fff8dc";
-      colorBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        currentColorTarget = { note, div, colorBtn };
-        const rect = colorBtn.getBoundingClientRect();
-        colorPicker.style.left = rect.left + "px";
-        colorPicker.style.top = rect.bottom + "px";
-        colorPicker.value = rgbToHex(div.style.background);
-        colorPicker.style.display = "block";
-        colorPicker.focus();
-      });
-      div.appendChild(colorBtn);
-
-      return div;
-    }
-
-    colorPicker.addEventListener("input", (e) => {
-      if (currentColorTarget) {
-        const { note, div, colorBtn } = currentColorTarget;
-        div.style.background = e.target.value;
-        colorBtn.style.background = e.target.value;
-        saveNote(note.id, div.querySelector(".content").textContent, e.target.value);
-      }
-    });
-    colorPicker.addEventListener("blur", () => {
-      colorPicker.style.display = "none";
-    });
-
-    async function saveNote(id, text, color) {
-      await fetch(API_URL + "?action=edit", {
-        method: "POST",
-        body: JSON.stringify({ id, text, color })
-      });
-    }
-
-    // FAB Menu functions
-    function openAddNoteDialog() {
+    function addNote() {
       const text = prompt("Enter note text:");
-      if (text) addNote(text);
+      if (!text) return;
+      fetch(`${scriptUrl}?action=add&text=${encodeURIComponent(text)}`)
+        .then(r => r.json())
+        .then(loadNotes);
     }
-    async function addNote(text) {
-      await fetch(API_URL + "?action=add", {
-        method: "POST",
-        body: JSON.stringify({ text, color: "#fff8dc" })
-      });
-      fetchNotes();
+
+    function addImage() {
+      const url = prompt("Enter image URL:");
+      if (!url) return;
+      fetch(`${scriptUrl}?action=add&imageUrl=${encodeURIComponent(url)}`)
+        .then(r => r.json())
+        .then(loadNotes);
     }
-    function openAddImageDialog() {
-      alert("Image upload not yet implemented");
-    }
+
     function toggleEditMode() {
       editMode = !editMode;
-      alert("Edit mode " + (editMode ? "enabled" : "disabled"));
-    }
-    function enableDeleteMode() {
-      deleteMode = !deleteMode;
-      alert("Delete mode " + (deleteMode ? "enabled" : "disabled"));
+      alert("Edit mode " + (editMode ? "ON" : "OFF"));
     }
 
-    function rgbToHex(rgb) {
-      if (!rgb) return "#fff8dc";
-      const res = rgb.match(/\d+/g);
-      return res ? "#" + res.slice(0,3).map(x => (+x).toString(16).padStart(2,"0")).join("") : "#fff8dc";
+    function deleteSelected() {
+      if (!selectedNote) { alert("No note selected"); return; }
+      fetch(`${scriptUrl}?action=delete&id=${selectedNote}`)
+        .then(r => r.json())
+        .then(loadNotes);
     }
 
-    setInterval(fetchNotes, 3000);
-    fetchNotes();
+    function loadNotes() {
+      board.innerHTML = '';
+      fetch(`${scriptUrl}?action=list`)
+        .then(r => r.json())
+        .then(notes => {
+          notes.forEach(n => {
+            const div = document.createElement('div');
+            div.className = 'note';
+            div.style.left = n.X + "px";
+            div.style.top = n.Y + "px";
+            div.style.background = n.Color;
+            div.dataset.id = n.ID;
+
+            if (n.ImageURL) {
+              const img = document.createElement('img');
+              img.src = n.ImageURL;
+              div.appendChild(img);
+            } else {
+              div.innerText = n.Text;
+            }
+
+            div.addEventListener('click', () => {
+              if (editMode) {
+                selectedNote = n.ID;
+                div.style.border = "2px solid red";
+              }
+            });
+
+            board.appendChild(div);
+          });
+        });
+    }
+    loadNotes();
   </script>
 </body>
 </html>
