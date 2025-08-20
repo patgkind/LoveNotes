@@ -1,437 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Love Notes</title>
-<style>
-  html,body { height:100%; margin:0; font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; }
-  body { background:#f6f7fb; }
-  #board {
-    position:relative;
-    margin:10px;
-    width:calc(100% - 20px);
-    height:calc(100vh - 20px);
-    background:#fff;
-    border:2px solid #cfcfcf;
-    border-radius:10px;
-    overflow:hidden;
-  }
-  /* outlines for modes */
-  #board.edit-outline { outline:2px dashed #4caf50; outline-offset:-6px; }
-  #board.delete-outline { outline:2px dashed #e53935; outline-offset:-6px; }
-
-  .note {
-    position:absolute;
-    min-width:160px;
-    min-height:100px;
-    padding:10px;
-    border-radius:8px;
-    box-shadow:0 3px 8px rgba(0,0,0,0.12);
-    cursor:grab;
-    user-select:none;
-  }
-  .note.adding, .note.editing { cursor:text; }
-
-  .note textarea {
-    width:100%;
-    height:100%;
-    border:none;
-    background:transparent;
-    resize:none;
-    outline:none;
-    font-size:14px;
-    line-height:1.35;
-    pointer-events:none;
-  }
-  .note.adding textarea, .note.editing textarea { pointer-events:auto; }
-
-.pin-badge {
-  position: absolute;
-  left: -6px;
-  top: -6px;
-  font-size: 16px;
-  cursor: pointer;
-  user-select: none;
-  background: rgba(255,255,255,0.7);
-  border-radius: 50%;
-  padding: 2px 5px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-  .delete-badge {
-    position:absolute; right:-8px; top:-8px;
-    width:22px; height:22px; border-radius:11px;
-    background:#e53935; color:#fff; font-size:13px;
-    display:none; align-items:center; justify-content:center;
-    box-shadow:0 2px 6px rgba(0,0,0,0.2); cursor:pointer;
-  }
-  .note.show-delete .delete-badge { display:flex; }
-
-  .color-btn {
-  position: absolute;
-  left: 6px;
-  bottom: 6px;      /* move to bottom left */
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  border: 1px solid rgba(0,0,0,0.15);
-  cursor: pointer;
-  display: none;
-}
-  .note.adding .color-btn, .note.editing .color-btn { display:block; }
-
-  .color-input { position: absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
-
-  /* FAB */
-  #fab { position:fixed; right:20px; bottom:20px; display:flex; flex-direction:column; align-items:flex-end; gap:10px; z-index:9999; }
-  #fabMain { width:56px; height:56px; border-radius:50%; border:none; background:#2196f3; color:#fff; font-size:28px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.2); }
-  #fabOptions { display:none; flex-direction:column; gap:8px; margin-bottom:8px; }
-  #fabOptions button { padding:8px 12px; border-radius:8px; border:none; background:#4caf50; color:#fff; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.12); }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Note App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      margin: 0;
+      padding: 20px;
+    }
+    #notes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .note {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      padding: 8px;
+      box-sizing: border-box;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+    .note textarea {
+      width: 100%;
+      height: 100%;
+      border: none;
+      resize: none;
+      outline: none;
+      background: transparent;
+      font-size: 14px;
+    }
+    .pin-badge {
+      position: absolute;
+      left: -6px;
+      top: -8px;
+      font-size: 16px;
+      cursor: pointer;
+      user-select: none;
+     
+    }
+    .color-btn {
+      position: absolute;
+      left: 6px;
+      bottom: 6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,0.15);
+      cursor: pointer;
+      display: block;
+    }
+    .color-input {
+      position: absolute;
+      left: -9999px; /* hide off-screen but keep clickable */
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+    #addBtn {
+      margin-bottom: 16px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <div id="board"></div>
+  <button id="addBtn">Add Note</button>
+  <div id="notes"></div>
 
-  <div id="fab">
-    <div id="fabOptions">
-      <button id="btnAdd">Add Note</button>
-      <button id="btnImage">Add Image</button>
-      <button id="btnEdit">Edit Mode</button>
-      <button id="btnDelete">Delete Mode</button>
-    </div>
-    <button id="fabMain">+</button>
-  </div>
+  <script>
+    const notesContainer = document.getElementById('notes');
+    const addBtn = document.getElementById('addBtn');
+    let notes = [];
 
-<script>
-  // ------------ config ------------
-  const API_URL = "https://script.google.com/macros/s/AKfycbyOgP36dXRLEoXmmg3KHUfPNuprLSVTo1k57aQYC8VkYfP4vdROq4X3lhFMvOHyQ1dgKw/exec";
-
-  // ------------ state ------------
-  const board = document.getElementById('board');
-  const fabMain = document.getElementById('fabMain');
-  const fabOptions = document.getElementById('fabOptions');
-  const btnAdd = document.getElementById('btnAdd');
-  const btnImage = document.getElementById('btnImage');
-  const btnEdit = document.getElementById('btnEdit');
-  const btnDelete = document.getElementById('btnDelete');
-
-  let mode = 'normal'; // normal, edit, delete
-  let noteMap = {};    // id -> element
-  let noteHashes = {}; // id -> hash
-  let zIndex = 1;
-
-  // contrast helper
-  function textColor(hex) {
-    if (!hex) return '#000';
-    const c = hex.replace('#','');
-    if (c.length !== 6) return '#000';
-    const r = parseInt(c.substring(0,2),16);
-    const g = parseInt(c.substring(2,4),16);
-    const b = parseInt(c.substring(4,6),16);
-    const lum = 0.299*r + 0.587*g + 0.114*b;
-    return lum > 140 ? '#000' : '#fff';
-  }
-
-  function hashNote(n) {
-    return `${n.text}|${n.color}|${n.x}|${n.y}|${n.pinned ? 1:0}|${n.image||''}`;
-  }
-
-  // ------------ FAB behavior ------------
-  fabMain.addEventListener('click', ()=> {
-    fabOptions.style.display = fabOptions.style.display === 'flex' ? 'none' : 'flex';
-  });
-  document.addEventListener('click', e => {
-    if (!fabMain.contains(e.target) && !fabOptions.contains(e.target)) fabOptions.style.display = 'none';
-  });
-
-  btnAdd.addEventListener('click', async ()=> {
-    fabOptions.style.display = 'none';
-    await addNoteBackend('', '#fffa91', 60, 60, false, '');
-    await loadNotes(); // immediate refresh
-  });
-
-  btnImage.addEventListener('click', async ()=> {
-    fabOptions.style.display = 'none';
-    const url = prompt('Image URL');
-    if (!url) return;
-    await addNoteBackend('', '#ffffff', 80, 80, false, url);
-    await loadNotes();
-  });
-
-  btnEdit.addEventListener('click', ()=> {
-    fabOptions.style.display = 'none';
-    if (mode === 'edit') {
-      mode = 'normal';
-      board.classList.remove('edit-outline');
-    } else {
-      mode = 'edit';
-      board.classList.add('edit-outline');
-      board.classList.remove('delete-outline');
+    function saveNotes() {
+      localStorage.setItem('notes', JSON.stringify(notes));
     }
-    // clear selected editing on toggle
-    Object.values(noteMap).forEach(el => { el.classList.remove('editing','adding'); const ta = el.querySelector('textarea'); if (ta) ta.disabled = true; });
-    updateDeleteBadges();
-  });
 
-  btnDelete.addEventListener('click', ()=> {
-    fabOptions.style.display = 'none';
-    if (mode === 'delete') {
-      mode = 'normal';
-      board.classList.remove('delete-outline');
-    } else {
-      mode = 'delete';
-      board.classList.add('delete-outline');
-      board.classList.remove('edit-outline');
+    function loadNotes() {
+      const stored = localStorage.getItem('notes');
+      if (stored) notes = JSON.parse(stored);
+      notes.forEach(n => renderNote(n));
     }
-    updateDeleteBadges();
-  });
 
-  function updateDeleteBadges() {
-    Object.values(noteMap).forEach(el => {
-      if (mode === 'delete') el.classList.add('show-delete');
-      else el.classList.remove('show-delete');
-    });
-  }
-
-  // ------------ backend wrappers ------------
-  async function addNoteBackend(text, color, x, y, pinned, image) {
-    const url = `${API_URL}?action=addNote&text=${encodeURIComponent(text||'')}&color=${encodeURIComponent(color)}&x=${x}&y=${y}&pinned=${pinned?'true':'false'}&image=${encodeURIComponent(image||'')}`;
-    const res = await fetch(url);
-    return res.json();
-  }
-  async function editNoteBackend(params) {
-    // params is object with id and any fields
-    const qs = Object.keys(params).map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`).join('&');
-    const url = `${API_URL}?action=editNote&${qs}`;
-    const res = await fetch(url);
-    return res.json();
-  }
-  async function deleteNoteBackend(id) {
-    const url = `${API_URL}?action=deleteNote&id=${encodeURIComponent(id)}`;
-    const res = await fetch(url);
-    return res.json();
-  }
-  async function getNotesBackend() {
-    const url = `${API_URL}?action=getNotes`;
-    const res = await fetch(url, { cache:'no-store' });
-    return res.json();
-  }
-
-  // ------------ render logic (smart diff) ------------
-  function createOrUpdateNoteDom(note, focus=false, adding=false) {
-    const h = hashNote(note);
-    if (noteMap[note.id] && noteHashes[note.id] === h && !adding && !focus) return; // unchanged
-
-    let el = noteMap[note.id];
-    if (!el) {
-      el = document.createElement('div');
+    function renderNote(note) {
+      const el = document.createElement('div');
       el.className = 'note';
-      el.style.zIndex = zIndex++;
-      noteMap[note.id] = el;
-      board.appendChild(el);
-      // attach dragging
-      attachDrag(el, note.id);
-    }
-    noteHashes[note.id] = h;
+      el.style.background = note.color || '#fff';
 
-    // set styles/position
-    el.style.left = (Number(note.x) || 60) + 'px';
-    el.style.top  = (Number(note.y) || 60) + 'px';
-    el.style.background = note.color || '#fffa91';
-    el.style.color = textColor(note.color || '#000');
-
-    // build inner
-    el.innerHTML = '';
-
-    // delete badge (top-right as badge)
-    const del = document.createElement('div');
-    del.className = 'delete-badge';
-    del.innerText = '❌';
-    del.title = 'Delete';
-    del.addEventListener('click', async (ev) => {
-      ev.stopPropagation();
-      if (mode !== 'delete') return;
-      await deleteNoteBackend(note.id);
-      if (noteMap[note.id]) { noteMap[note.id].remove(); delete noteMap[note.id]; delete noteHashes[note.id]; }
-      await loadNotes();
-    });
-    el.appendChild(del);
-
-    // pin (top-left)
-    const pin = document.createElement('div');
-    pin.className = 'pin-badge';
-    pin.innerText = '📌';
-    pin.title = note.pinned ? 'Unpin' : 'Pin';
-    pin.style.opacity = note.pinned ? '1' : '0.6';
-    pin.addEventListener('click', async (ev) => {
-      ev.stopPropagation();
-      note.pinned = !note.pinned;
-      await editNoteBackend({ id: note.id, pinned: note.pinned ? 'true' : 'false' });
-      await loadNotes();
-    });
-    el.appendChild(pin);
-
-    // color button + hidden input
-    const colorBtn = document.createElement('button');
-    colorBtn.className = 'color-btn';
-    colorBtn.style.background = note.color || '#fff';
-    colorBtn.title = 'Change color';
-    el.appendChild(colorBtn);
-
-    const colorInput = document.createElement('input');
-    colorInput.type = 'color';
-    colorInput.className = 'color-input';
-    colorInput.value = note.color || '#fffa91';
-    colorInput.addEventListener('input', async (ev) => {
-      const v = ev.target.value;
-      el.style.background = v;
-      colorBtn.style.background = v;
-      await editNoteBackend({ id: note.id, color: v });
-      noteHashes[note.id] = hashNote(note);
-    });
-    colorBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      colorInput.click();
-    });
-    el.appendChild(colorInput);
-
-    // textarea
-    const ta = document.createElement('textarea');
-    ta.value = note.text || '';
-    ta.disabled = !(adding || (mode === 'edit' && taIsSelected(note.id)));
-    ta.style.color = textColor(note.color || '#000');
-    el.appendChild(ta);
-
-    // if in edit mode, clicking the note selects it for editing (only that note)
-    el.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      if (mode === 'edit') {
-        // select this note for editing
-        Object.values(noteMap).forEach(x => {
-          x.classList.remove('editing');
-          const xt = x.querySelector('textarea');
-          if (xt) xt.disabled = true;
-        });
-        el.classList.add('editing');
-        ta.disabled = false;
-        ta.focus();
-        selectedForEdit = note.id;
-      }
-    });
-
-    // adding behavior: focus and listen for outside click to finish
-    if (adding || focus) {
-      el.classList.add('adding');
-      ta.disabled = false;
-      ta.focus();
-    } else {
-      el.classList.remove('adding');
-    }
-
-    // textarea key and blur handling
-    ta.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') { e.preventDefault(); ta.blur(); }
-    });
-    ta.addEventListener('blur', async () => {
-      if (ta.disabled) return;
-      const newText = ta.value;
-      ta.disabled = true;
-      // only save if changed
-      if (newText !== note.text) {
-        await editNoteBackend({ id: note.id, text: newText });
-        await loadNotes();
-      } else {
-        // if color or position edited elsewhere, we still sync occasionally
-      }
-      el.classList.remove('adding');
-      el.classList.remove('editing');
-      selectedForEdit = null;
-    });
-
-    // show delete badge based on mode
-    if (mode === 'delete') el.classList.add('show-delete'); else el.classList.remove('show-delete');
-  }
-
-  // helper to test if textarea should be enabled - keep single selected note during edit
-  let selectedForEdit = null;
-  function taIsSelected(id) { return selectedForEdit === id; }
-
-  // drag attach (always enabled unless clicking UI)
-  function attachDrag(el, id) {
-    let dragging = false, ox = 0, oy = 0;
-    el.addEventListener('mousedown', (ev) => {
-      const tag = ev.target.tagName;
-      if (["TEXTAREA","INPUT","BUTTON"].includes(tag)) return;
-      if (mode === 'delete') return;
-      dragging = true;
-      const rect = el.getBoundingClientRect();
-      const brect = board.getBoundingClientRect();
-      ox = ev.clientX - rect.left;
-      oy = ev.clientY - rect.top;
-      el.style.zIndex = ++zIndex;
-      ev.preventDefault();
-    });
-    document.addEventListener('mousemove', (ev) => {
-      if (!dragging) return;
-      const brect = board.getBoundingClientRect();
-      let nx = ev.clientX - brect.left - ox;
-      let ny = ev.clientY - brect.top - oy;
-      // constrain inside board
-      nx = Math.max(6, Math.min(nx, brect.width - el.offsetWidth - 6));
-      ny = Math.max(6, Math.min(ny, brect.height - el.offsetHeight - 6));
-      el.style.left = nx + 'px';
-      el.style.top  = ny + 'px';
-    });
-    document.addEventListener('mouseup', async () => {
-      if (!dragging) return;
-      dragging = false;
-      const nx = parseInt(el.style.left,10);
-      const ny = parseInt(el.style.top,10);
-      // update backend
-      await editNoteBackend({ id, x: nx, y: ny });
-      // immediate refresh
-      await loadNotes();
-    });
-  }
-
-  // ------------ load / poll ------------
-  async function loadNotes() {
-    try {
-      const list = await getNotesBackend();
-      const seen = new Set();
-      for (const n of list) {
-        seen.add(n.id);
-        // create or update DOM
-        createOrUpdateNoteDom(n, false, false);
-      }
-      // remove deleted
-      Object.keys(noteMap).forEach(id => {
-        if (!seen.has(id)) {
-          if (noteMap[id]) { noteMap[id].remove(); delete noteMap[id]; delete noteHashes[id]; }
-        }
+      const pin = document.createElement('div');
+      pin.className = 'pin-badge';
+      pin.textContent = '📌';
+      pin.title = note.pinned ? 'Pinned' : 'Pin note';
+      pin.addEventListener('click', () => {
+        note.pinned = !note.pinned;
+        saveNotes();
+        refreshNotes();
       });
-    } catch (err) {
-      console.error('loadNotes error', err);
+      el.appendChild(pin);
+
+      const colorBtn = document.createElement('button');
+      colorBtn.className = 'color-btn';
+      colorBtn.style.background = note.color || '#fff';
+      colorBtn.title = 'Change color';
+      el.appendChild(colorBtn);
+
+      const colorInput = document.createElement('input');
+      colorInput.type = 'color';
+      colorInput.className = 'color-input';
+      colorInput.value = note.color || '#fffa91';
+      colorInput.addEventListener('input', (ev) => {
+        note.color = ev.target.value;
+        el.style.background = note.color;
+        colorBtn.style.background = note.color;
+        saveNotes();
+      });
+      el.appendChild(colorInput);
+
+      colorBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        colorInput.click();
+      });
+
+      const ta = document.createElement('textarea');
+      ta.value = note.text;
+      ta.addEventListener('input', () => {
+        note.text = ta.value;
+        saveNotes();
+      });
+      el.appendChild(ta);
+
+      notesContainer.appendChild(el);
     }
-  }
 
-  // small poll fallback to keep clients in sync, interval adjustable
-  loadNotes();
-  setInterval(loadNotes, 7000);
+    function refreshNotes() {
+      notesContainer.innerHTML = '';
+      const sorted = [...notes].sort((a, b) => b.pinned - a.pinned);
+      sorted.forEach(n => renderNote(n));
+    }
 
+    addBtn.addEventListener('click', () => {
+      const newNote = { text: '', color: '#fff', pinned: false };
+      notes.push(newNote);
+      saveNotes();
+      refreshNotes();
+    });
 
-  // Small utility wrappers used above
-  async function getNotesBackend() { return await getNotesBackend_inner(); }
-  async function getNotesBackend_inner() {
-    const res = await fetch(`${API_URL}?action=getNotes`, { cache: 'no-store' });
-    return res.json();
-  }
-
-  // expose some functions for add/edit wrappers earlier
-  async function editNoteBackendWrapper(params) { return await editNoteBackend(params); }
-  // final unused wrappers omitted for brevity
-
-  // END
-</script>
+    loadNotes();
+  </script>
 </body>
 </html>
