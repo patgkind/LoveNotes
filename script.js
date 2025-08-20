@@ -88,7 +88,7 @@ function renderNote(note, focus=false){
   // image
   if(note.image){
     const img = document.createElement('img'); img.src=note.image;
-    img.style.maxWidth='100%'; img.style.maxHeight='100%'; img.style.display='block';
+    img.style.maxWidth='100%'; img.style.maxHeight='10%'; img.style.display='block';
     img.style.marginBottom='6px'; img.style.borderRadius='6px'; el.appendChild(img);
   }
 
