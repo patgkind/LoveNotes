@@ -1,11 +1,10 @@
-/* styles.css */
 html,body { height:100%; margin:0; font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; }
 body { background:#f6f7fb; }
 #board {
   position:relative;
-  margin:5px;
-  width:calc(100% - 10px);
-  height:calc(100vh - 10px);
+  margin:10px;
+  width:calc(100% - 20px);
+  height:calc(100vh - 20px);
   background:#fff;
   border:2px solid #cfcfcf;
   border-radius:10px;
@@ -16,17 +15,16 @@ body { background:#f6f7fb; }
 
 .note {
   position:absolute;
-  min-width:140px;
-  min-height:90px;
+  min-width:160px;
+  min-height:100px;
   padding:10px;
   border-radius:8px;
   box-shadow:0 3px 8px rgba(0,0,0,0.12);
   cursor:grab;
   user-select:none;
   overflow:hidden;
+  background:#fffa91;
 }
-.note.adding, .note.editing { cursor:text; }
-
 .note textarea {
   width:100%;
   height:100%;
@@ -42,22 +40,11 @@ body { background:#f6f7fb; }
   padding:8px 6px;
   box-sizing:border-box;
 }
-.note.adding textarea, .note.editing textarea { pointer-events:auto; }
-
-.pin-badge {
-  position:absolute;
-  left:0px;
-  top:0px;
-  font-size:16px;
-  cursor:pointer;
-  user-select:none;
-  z-index:3;
-}
-
+.note.adding, .note.editing { cursor:text; }
 .delete-badge {
   position:absolute;
-  right:0px;
-  top:0px;
+  right:-8px;
+  top:-8px;
   width:22px; height:22px; border-radius:11px;
   background:#e53935; color:#fff; font-size:13px;
   display:none; align-items:center; justify-content:center;
@@ -66,13 +53,18 @@ body { background:#f6f7fb; }
 }
 .note.show-delete .delete-badge { display:flex; }
 
-#fab { position:fixed; right:10px; bottom:10px; display:flex; flex-direction:column; align-items:flex-end; gap:8px; z-index:9999; }
-#fabMain { width:50px; height:50px; border-radius:50%; border:none; background:#2196f3; color:#fff; font-size:28px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.2); }
-#fabOptions { display:none; flex-direction:column; gap:6px; margin-bottom:6px; }
-#fabOptions button { padding:6px 10px; border-radius:8px; border:none; background:#4caf50; color:#fff; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.12); }
-
-@media (max-width:600px){
-  .note { min-width:100px; min-height:70px; font-size:12px; }
-  #fabMain { width:44px; height:44px; font-size:24px; }
-  #fabOptions button { padding:5px 8px; font-size:12px; }
+.pin-badge {
+  position:absolute;
+  left:-6px;
+  top:-6px;
+  font-size:16px;
+  cursor:pointer;
+  user-select:none;
+  z-index:3;
 }
+
+/* FAB */
+#fab { position:fixed; right:20px; bottom:20px; display:flex; flex-direction:column; align-items:flex-end; gap:10px; z-index:9999; }
+#fabMain { width:56px; height:56px; border-radius:50%; border:none; background:#2196f3; color:#fff; font-size:28px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.2); }
+#fabOptions { display:none; flex-direction:column; gap:8px; margin-bottom:8px; }
+#fabOptions button { padding:8px 12px; border-radius:8px; border:none; background:#4caf50; color:#fff; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.12); }
