@@ -158,16 +158,22 @@ function createOrUpdateNoteDom(note,focus=false,adding=false){
   else el.classList.remove('adding');
 
   ta.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); ta.blur(); }});
-  ta.addEventListener('blur',async ()=>{
-    if(ta.disabled) return;
-    const newText=ta.value; ta.disabled=true;
-    if(newText!==note.text){ await editNoteBackend({id:note.id,text:newText}); await loadNotes(); }
-    el.classList.remove('adding'); el.classList.remove('editing'); selectedForEdit=null;
-  });
+ta.addEventListener('blur', async () => {
+  if (ta.disabled) return;
+  const newText = ta.value;
+  ta.disabled = true;
+  if (newText !== note.text) {
+    await editNoteBackend({ id: note.id, text: newText });
+    await loadNotes();
+  }
+  el.classList.remove('adding');
+  el.classList.remove('editing');
+  selectedForEdit = null;
 
-  el.classList.toggle('show-delete',mode==='delete');
-}
-
+  // exit edit mode
+  mode = 'normal';
+  board.classList.remove('edit-outline');
+});
 // ------------------- drag -------------------
 function attachDrag(el,id){
   let dragging=false,ox=0,oy=0;
