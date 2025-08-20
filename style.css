@@ -23,7 +23,6 @@ overflow: visible;
   box-shadow:0 3px 8px rgba(0,0,0,0.12);
   cursor:grab;
   user-select:none;
-  overflow:hidden;
 }
 .note.adding, .note.editing { cursor:text; }
 
