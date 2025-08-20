@@ -5,124 +5,135 @@
   <title>Love Notes</title>
   <style>
     body {
-      font-family: system-ui, sans-serif;
       margin: 0;
-      padding: 0;
-      background: #f9f9f9;
+      font-family: Arial, sans-serif;
+      background: #f8f8f8;
     }
+
     #board {
-      margin: 10px;
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      min-height: 90vh;
       position: relative;
+      margin: 10px;
+      height: calc(100vh - 20px);
+      border: 2px solid #ccc;
+      border-radius: 10px;
       overflow: hidden;
     }
+
     .note {
       position: absolute;
-      min-width: 150px;
-      min-height: 100px;
-      padding: 8px;
+      padding: 10px;
+      min-width: 120px;
+      min-height: 80px;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      background: #fff475;
-      overflow: hidden;
+      word-wrap: break-word;
+      cursor: grab;
     }
+
     .note textarea {
       width: 100%;
       height: 100%;
       border: none;
-      outline: none;
       resize: none;
       background: transparent;
       font-size: 14px;
+      outline: none;
     }
+
     .pin {
       position: absolute;
-      top: 4px;
-      left: 4px;
+      top: 5px;
+      left: 5px;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 18px;
     }
+
     .delete-badge {
       position: absolute;
-      top: 4px;
-      right: 4px;
+      top: 5px;
+      right: 5px;
       cursor: pointer;
-      font-size: 16px;
+      background: red;
+      color: white;
+      border-radius: 50%;
+      padding: 2px 6px;
+      font-size: 12px;
       display: none;
     }
+
     .fab {
       position: fixed;
       bottom: 20px;
       right: 20px;
-    }
-    .fab button {
-      background: #6200ee;
+      background: #007bff;
       color: white;
-      border: none;
       border-radius: 50%;
       width: 56px;
       height: 56px;
-      font-size: 24px;
-      margin-top: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       cursor: pointer;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      font-size: 28px;
     }
+
     .fab-menu {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
       display: none;
       flex-direction: column;
-      align-items: flex-end;
-      margin-bottom: 8px;
+      gap: 10px;
     }
-    .fab.open .fab-menu {
-      display: flex;
-    }
+
     .fab-menu button {
-      border-radius: 8px;
-      width: auto;
-      height: auto;
-      padding: 6px 12px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 12px;
+      cursor: pointer;
       font-size: 14px;
-      background: #03dac5;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     }
-    .edit-mode #board {
-      outline: 2px dashed #6200ee;
-    }
+
+    .edit-mode #board,
     .delete-mode #board {
-      outline: 2px dashed red;
+      outline: 2px dashed #007bff;
     }
   </style>
 </head>
 <body>
   <div id="board"></div>
 
-  <div class="fab" id="fab">
-    <div class="fab-menu">
-      <button onclick="startAddNote()">Add Note</button>
-      <button onclick="alert('Add Image coming soon')">Add Image</button>
-      <button onclick="toggleEditMode()">Edit Mode</button>
-      <button onclick="toggleDeleteMode()">Delete Mode</button>
-    </div>
-    <button onclick="toggleFab()">＋</button>
+  <div class="fab" id="fab">+</div>
+  <div class="fab-menu" id="fabMenu">
+    <button onclick="startAddNote()">Add Note</button>
+    <button onclick="addImage()">Add Image</button>
+    <button onclick="toggleEditMode()">Edit Mode</button>
+    <button onclick="toggleDeleteMode()">Delete Mode</button>
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOgP36dXRLEoXmmg3KHUfPNuprLSVTo1k57aQYC8VkYfP4vdROq4X3lhFMvOHyQ1dgKw/exec";
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbyOgP36dXRLEoXmmg3KHUfPNuprLSVTo1k57aQYC8VkYfP4vdROq4X3lhFMvOHyQ1dgKw/exec";
     let notes = [];
     let editMode = false;
     let deleteMode = false;
 
-    function toggleFab() {
-      document.getElementById('fab').classList.toggle('open');
-    }
+    // --- FAB behavior
+    const fab = document.getElementById("fab");
+    const fabMenu = document.getElementById("fabMenu");
+    fab.onclick = () => {
+      fabMenu.style.display = fabMenu.style.display === "flex" ? "none" : "flex";
+    };
 
     function toggleEditMode() {
       editMode = !editMode;
       deleteMode = false;
       document.body.classList.toggle("edit-mode", editMode);
       document.body.classList.remove("delete-mode");
-      renderNotes();
+      updateNotesUI();
     }
 
     function toggleDeleteMode() {
@@ -130,111 +141,140 @@
       editMode = false;
       document.body.classList.toggle("delete-mode", deleteMode);
       document.body.classList.remove("edit-mode");
-      renderNotes();
+      updateNotesUI();
     }
 
     function startAddNote() {
       const id = Date.now().toString();
       const note = {
-        id,
-        text: "",
-        color: "#fff475",
-        x: 50, y: 50,
-        pinned: false
+        id, text: "", x: 50, y: 50, color: "#ffff88", pinned: false
       };
       notes.push(note);
       renderNotes();
       const el = document.getElementById(id).querySelector("textarea");
-      el.removeAttribute("disabled");
       el.focus();
-      el.addEventListener("blur", () => finishAddOrEdit(id, el.value, note.color));
+      triggerSave("add", note);
     }
 
-    function finishAddOrEdit(id, text, color) {
-      const note = notes.find(n => n.id === id);
-      if (!note) return;
-      note.text = text;
-      note.color = color;
-      saveNote(note);
+    function addImage() {
+      alert("Image notes not yet implemented");
+    }
+
+    // --- Render Notes
+    function renderNotes() {
+      const board = document.getElementById("board");
+      board.innerHTML = "";
+      notes.forEach(n => {
+        const div = document.createElement("div");
+        div.className = "note";
+        div.id = n.id;
+        div.style.left = n.x + "px";
+        div.style.top = n.y + "px";
+        div.style.background = n.color;
+        div.style.color = getTextColor(n.color);
+
+        const pin = document.createElement("div");
+        pin.className = "pin";
+        pin.textContent = n.pinned ? "📍" : "📌";
+        pin.onclick = () => togglePin(n.id);
+        div.appendChild(pin);
+
+        const del = document.createElement("div");
+        del.className = "delete-badge";
+        del.textContent = "X";
+        if (deleteMode) del.style.display = "block";
+        del.onclick = () => deleteNote(n.id);
+        div.appendChild(del);
+
+        const textarea = document.createElement("textarea");
+        textarea.value = n.text;
+        textarea.disabled = !editMode && textarea.value !== "";
+        textarea.oninput = e => {
+          n.text = e.target.value;
+          triggerSave("edit", n);
+        };
+        div.appendChild(textarea);
+
+        // Drag
+        div.onmousedown = e => {
+          if (!editMode && !deleteMode) {
+            let shiftX = e.clientX - div.getBoundingClientRect().left;
+            let shiftY = e.clientY - div.getBoundingClientRect().top;
+
+            function moveAt(pageX, pageY) {
+              div.style.left = pageX - shiftX + "px";
+              div.style.top = pageY - shiftY + "px";
+            }
+
+            function onMouseMove(e) {
+              moveAt(e.pageX, e.pageY);
+            }
+
+            document.addEventListener("mousemove", onMouseMove);
+            div.onmouseup = () => {
+              document.removeEventListener("mousemove", onMouseMove);
+              div.onmouseup = null;
+              n.x = parseInt(div.style.left);
+              n.y = parseInt(div.style.top);
+              triggerSave("move", n);
+            };
+          }
+        };
+
+        board.appendChild(div);
+      });
+    }
+
+    function updateNotesUI() {
       renderNotes();
     }
 
-    async function saveNote(note) {
-      await fetch(`${SCRIPT_URL}?action=edit&id=${note.id}&text=${encodeURIComponent(note.text)}&color=${encodeURIComponent(note.color)}&x=${note.x}&y=${note.y}&pinned=${note.pinned}`);
-      fetchNotes();
+    function togglePin(id) {
+      const n = notes.find(note => note.id === id);
+      if (!n) return;
+      n.pinned = !n.pinned;
+      triggerSave("pin", n);
+      renderNotes();
+    }
+
+    function deleteNote(id) {
+      notes = notes.filter(n => n.id !== id);
+      triggerSave("delete", {id});
+      renderNotes();
+    }
+
+    function getTextColor(bg) {
+      const c = bg.substring(1); // strip #
+      const rgb = parseInt(c, 16);
+      const r = (rgb >> 16) & 0xff;
+      const g = (rgb >> 8) & 0xff;
+      const b = (rgb >> 0) & 0xff;
+      const luma = 0.299*r + 0.587*g + 0.114*b;
+      return luma > 128 ? "#000" : "#fff";
+    }
+
+    // --- Backend calls
+    async function triggerSave(action, data) {
+      await fetch(scriptUrl + "?action=" + action, {
+        method: "POST",
+        body: JSON.stringify(data)
+      });
+      fetchNotes(); // trigger realtime check after add/edit/move
     }
 
     async function fetchNotes() {
       try {
-        const res = await fetch(`${SCRIPT_URL}?action=get`);
-        const data = await res.json();
-        notes = data;
+        const res = await fetch(scriptUrl + "?action=main");
+        const txt = await res.text();
+        notes = JSON.parse(txt);
         renderNotes();
       } catch (e) {
         console.error("Fetch error", e);
       }
     }
 
-    function renderNotes() {
-      const board = document.getElementById("board");
-      board.innerHTML = "";
-      notes.forEach(note => {
-        const div = document.createElement("div");
-        div.className = "note";
-        div.id = note.id;
-        div.style.background = note.color;
-        div.style.left = note.x + "px";
-        div.style.top = note.y + "px";
-
-        const textarea = document.createElement("textarea");
-        textarea.value = note.text;
-        textarea.disabled = true;
-        div.appendChild(textarea);
-
-        const pin = document.createElement("div");
-        pin.className = "pin";
-        pin.textContent = note.pinned ? "📌" : "";
-        pin.onclick = () => { note.pinned = !note.pinned; saveNote(note); };
-        div.appendChild(pin);
-
-        const del = document.createElement("div");
-        del.className = "delete-badge";
-        del.textContent = "❌";
-        if (deleteMode) del.style.display = "block";
-        del.onclick = () => deleteNote(note.id);
-        div.appendChild(del);
-
-        makeDraggable(div, note);
-        board.appendChild(div);
-      });
-    }
-
-    async function deleteNote(id) {
-      await fetch(`${SCRIPT_URL}?action=delete&id=${id}`);
-      fetchNotes();
-    }
-
-    function makeDraggable(el, note) {
-      let offsetX, offsetY;
-      el.onmousedown = e => {
-        if (editMode || deleteMode) return;
-        offsetX = e.clientX - el.offsetLeft;
-        offsetY = e.clientY - el.offsetTop;
-        document.onmousemove = e2 => {
-          el.style.left = e2.clientX - offsetX + "px";
-          el.style.top = e2.clientY - offsetY + "px";
-        };
-        document.onmouseup = () => {
-          document.onmousemove = null;
-          document.onmouseup = null;
-          note.x = parseInt(el.style.left);
-          note.y = parseInt(el.style.top);
-          saveNote(note);
-        };
-      };
-    }
-
     fetchNotes();
+    setInterval(fetchNotes, 5000); // still keep slow polling fallback
   </script>
 </body>
 </html>
