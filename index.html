@@ -405,27 +405,6 @@
   loadNotes();
   setInterval(loadNotes, 7000);
 
-  // ------------ helpers used by createOrUpdateNoteDom ------------
-  function createOrUpdateNoteDom(note, focus=false, adding=false) {
-    // wrapper calls inner to match earlier naming
-    createOrUpdateNoteDom_inner(note, focus, adding);
-  }
-
-  // rename inner implementation (to keep earlier structure)
-  function createOrUpdateNoteDom_inner(note, focus=false, adding=false) {
-    // reuse the implementation above (we actually implemented createOrUpdateNoteDom above)
-    // call it:
-    createOrUpdateNoteDom_real(note, focus, adding);
-  }
-
-  // real function is defined earlier as createOrUpdateNoteDom_real - to avoid duplication, let's alias:
-  const createOrUpdateNoteDom_real = (function() {
-    // to avoid hoisting issues, reference the earlier function by its name if it exists
-    return window.createOrUpdateNoteDom || function(n,f,a){ console.warn('internal create missing',n); };
-  })();
-
-  // But we actually defined createOrUpdateNoteDom earlier, so alias it:
-  window.createOrUpdateNoteDom = createOrUpdateNoteDom; // ensure global
 
   // Small utility wrappers used above
   async function getNotesBackend() { return await getNotesBackend_inner(); }
